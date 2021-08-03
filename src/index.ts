@@ -1,7 +1,7 @@
-import Object from '@rbxts/object-utils';
-import { Players, ReplicatedStorage, RunService, ServerScriptService } from '@rbxts/services';
-import Signal from '@rbxts/signal';
-import { t } from '@rbxts/t';
+import Object from "@rbxts/object-utils";
+import { Players, ReplicatedStorage, RunService, ServerScriptService } from "@rbxts/services";
+import Signal from "@rbxts/signal";
+import { t } from "@rbxts/t";
 
 namespace NetworkingImpl {
 	interface Sink {
