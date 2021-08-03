@@ -1,7 +1,7 @@
-import Object from "@rbxts/object-utils";
-import { Players, ReplicatedStorage, RunService, ServerScriptService } from "@rbxts/services";
-import Signal from "@rbxts/signal";
-import { t } from "@rbxts/t";
+import Object from '@rbxts/object-utils';
+import { Players, ReplicatedStorage, RunService, ServerScriptService } from '@rbxts/services';
+import Signal from '@rbxts/signal';
+import { t } from '@rbxts/t';
 
 namespace NetworkingImpl {
 	interface Sink {
@@ -38,7 +38,7 @@ namespace NetworkingImpl {
 		 */
 		connect<T extends keyof R, K extends R[T] extends (...args: infer P) => void ? P : never>(
 			event: T,
-			cb: (player: Player, ...args: K) => void,
+			cb: (player: Player, ...args: unknown[]) => void,
 			additionalGuards?: { [k in keyof K]?: t.check<K[k]> },
 		): RBXScriptConnection;
 	} & M;
