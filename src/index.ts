@@ -3,6 +3,11 @@ import { Players, ReplicatedStorage, RunService, ServerScriptService } from "@rb
 import Signal from "@rbxts/signal";
 import { t } from "@rbxts/t";
 
+type NetworkEvents = typeof NETWORK_EVENTS;
+const NETWORK_EVENTS = {
+	onGuardFailed: new Signal<(player: Player, event: NetworkingImpl.EventInfo, failedArg: number) => void>(),
+} as const;
+
 namespace NetworkingImpl {
 	interface Sink {
 		/** @hidden */
@@ -11,7 +16,15 @@ namespace NetworkingImpl {
 	export const Sink = {} as Sink;
 
 	export interface EventInfo {
+		/**
+		 * The name provided for this event.
+		 */
 		name: string;
+
+		/**
+		 * The (generated) global name used for distinguishing different createEvent calls.
+		 */
+		globalName: string;
 	}
 
 	export type Middleware<I extends ReadonlyArray<unknown> = unknown[], O = unknown> = (
@@ -90,8 +103,6 @@ namespace NetworkingImpl {
 	type EventList = { [key: string]: (...args: never[]) => unknown };
 	type StaticGuards<T> = { [key in keyof T]: t.check<unknown>[] };
 
-	declare const xx: StaticGuards<{ ay: (arg: string) => void }>;
-
 	function populateEvents(names: string[], eventsName: string, map: Map<string, RemoteEvent>) {
 		let remotes = RunService.IsServer()
 			? ReplicatedStorage.FindFirstChild(eventsName)
@@ -126,7 +137,7 @@ namespace NetworkingImpl {
 	}
 
 	export function createEvent<S, C>(
-		name: string,
+		globalName: string,
 		_serverGuards: StaticGuards<S>,
 		_clientGuards: StaticGuards<C>,
 		serverMiddleware?: EventMiddleware<S>,
@@ -137,9 +148,10 @@ namespace NetworkingImpl {
 
 		const globalEvents = {} as EventType<S, C>;
 		const remotes = new Map<string, RemoteEvent>();
+		const eventInfo = new Map<string, EventInfo>();
 
-		populateEvents(Object.keys(serverGuards) as string[], `events-${name}`, remotes);
-		populateEvents(Object.keys(clientGuards) as string[], `events-${name}`, remotes);
+		populateEvents(Object.keys(serverGuards) as string[], `events-${globalName}`, remotes);
+		populateEvents(Object.keys(clientGuards) as string[], `events-${globalName}`, remotes);
 
 		const middleware = RunService.IsServer() ? serverMiddleware : clientMiddleware;
 		const connections = new Map<string, BindableEvent>();
@@ -153,13 +165,17 @@ namespace NetworkingImpl {
 				return bindable.Fire(player, ...args);
 			};
 
+			const info: EventInfo = {
+				name,
+				globalName,
+			};
+			eventInfo.set(name, info);
+
 			let startingExecutor = executor;
 			const eventMiddleware = (middleware as { [key: string]: MiddlewareFactory<unknown[], unknown>[] })?.[name];
 			if (eventMiddleware !== undefined) {
 				for (let i = eventMiddleware.size() - 1; i >= 0; i--) {
-					const middleware = eventMiddleware[i](startingExecutor, {
-						name,
-					});
+					const middleware = eventMiddleware[i](startingExecutor, info);
 
 					startingExecutor = middleware;
 				}
@@ -238,6 +254,7 @@ namespace NetworkingImpl {
 					for (let i = 0; i < guards.size(); i++) {
 						const guard = guards[i];
 						if (!guard(args[i])) {
+							NETWORK_EVENTS.onGuardFailed.Fire(player, eventInfo.get(name)!, i);
 							return;
 						}
 					}
@@ -289,6 +306,7 @@ namespace NetworkingImpl {
 					for (let i = 0; i < guards.size(); i++) {
 						const guard = guards[i];
 						if (!guard(args[i])) {
+							NETWORK_EVENTS.onGuardFailed.Fire(Players.LocalPlayer, eventInfo.get(name)!, i);
 							return;
 						}
 					}
@@ -303,19 +321,42 @@ namespace NetworkingImpl {
 }
 
 export namespace Networking {
-	/** @hidden */
-	export type EventType<S, C> = NetworkingImpl.EventType<S, C>;
-	export type Middleware<I extends ReadonlyArray<unknown> = unknown[], O = unknown> = NetworkingImpl.Middleware<I, O>;
-	export type MiddlewareFactory<
-		I extends ReadonlyArray<unknown> = unknown[],
-		O = unknown,
-	> = NetworkingImpl.MiddlewareFactory<I, O>;
-
+	/**
+	 * Create a new RemoteEvent.
+	 * @param serverMiddleware The middleware used for the server events.
+	 * @param clientMiddleware The middleware used for the client events.
+	 */
 	export declare function createEvent<S, C>(
 		serverMiddleware?: NetworkingImpl.EventMiddleware<S>,
 		clientMiddleware?: NetworkingImpl.EventMiddleware<C>,
 	): NetworkingImpl.EventType<S, C>;
 
+	/**
+	 * Connect to a global networking event.
+	 * @param eventName The networking event to connect to.
+	 * @param cb The callback to use.
+	 */
+	export function connectEvent<T extends keyof NetworkEvents>(eventName: T, cb: SignalCallback<NetworkEvents[T]>) {
+		return NETWORK_EVENTS[eventName].Connect(cb);
+	}
+
+	/**
+	 * Information about an invoked event.
+	 */
+	export type EventInfo = NetworkingImpl.EventInfo;
+
+	/**
+	 * A function which generates middleware.
+	 */
+	export type MiddlewareFactory<
+		I extends ReadonlyArray<unknown> = unknown[],
+		O = unknown,
+	> = NetworkingImpl.MiddlewareFactory<I, O>;
+
 	/** @hidden */
 	export const _createEvent = NetworkingImpl.createEvent;
+
+	/** @hidden */
+	export type EventType<S, C> = NetworkingImpl.EventType<S, C>;
+	type SignalCallback<T> = T extends Signal<infer P> ? P : never;
 }
