@@ -1,4 +1,3 @@
-import { Players } from "@rbxts/services";
 import Signal from "@rbxts/signal";
 import { NetworkInfo } from "./types";
 

@@ -3,7 +3,7 @@ import { fireNetworkHandler } from "handlers";
 import { createMiddlewareProcessor } from "../middleware/createMiddlewareProcessor";
 import { EventMiddlewareList, Middleware } from "../middleware/types";
 import { NetworkInfo } from "../types";
-import { ArbitaryGuards, ClientHandler, ServerHandler } from "./types";
+import { ArbitaryGuards, ClientHandler } from "./types";
 
 export function createClientHandler<S, C>(
 	remotes: Map<string, RemoteEvent>,

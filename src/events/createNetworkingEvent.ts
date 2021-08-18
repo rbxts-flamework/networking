@@ -5,7 +5,7 @@ import { NetworkInfo } from "../types";
 import { populateInstanceMap } from "../util/populateInstanceMap";
 import { createClientHandler } from "./createClientHandler";
 import { createServerHandler } from "./createServerHandler";
-import { ArbitaryGuards, GlobalEvent, ServerHandler } from "./types";
+import { ArbitaryGuards, GlobalEvent } from "./types";
 
 export function createNetworkingEvent<S, C>(
 	globalName: string,

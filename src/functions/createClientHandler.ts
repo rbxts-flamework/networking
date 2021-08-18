@@ -1,6 +1,6 @@
 export {};
 import { t } from "@rbxts/t";
-import { getFunctionError, isNetworkingFunctionError, NetworkingFunctionError } from "./errors";
+import { getFunctionError, NetworkingFunctionError } from "./errors";
 import { createMiddlewareProcessor } from "../middleware/createMiddlewareProcessor";
 import { FunctionMiddlewareList, Middleware } from "../middleware/types";
 import { NetworkInfo } from "../types";
