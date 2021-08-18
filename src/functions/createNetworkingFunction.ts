@@ -24,7 +24,8 @@ export function createNetworkingFunction<S, C>(
 	populateInstanceMap("RemoteEvent", `functions-${globalName}`, serverNames, serverRemotes);
 	populateInstanceMap("RemoteEvent", `functions-${globalName}`, clientNames, clientRemotes);
 
-	for (const [name] of serverRemotes) {
+	for (const [alias] of serverRemotes) {
+		const name = alias.sub(3);
 		networkInfos.set(name, {
 			eventType: "Function",
 			globalName,
@@ -32,7 +33,8 @@ export function createNetworkingFunction<S, C>(
 		});
 	}
 
-	for (const [name] of clientRemotes) {
+	for (const [alias] of clientRemotes) {
+		const name = alias.sub(3);
 		networkInfos.set(name, {
 			eventType: "Function",
 			globalName,

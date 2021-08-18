@@ -3,7 +3,7 @@ import { Flamework } from "@flamework/core";
 export const isNetworkingFunctionError = Flamework.createGuard<NetworkingFunctionError>();
 export enum NetworkingFunctionError {
 	Timeout = "Timeout",
-	Failure = "Failure",
+	Cancelled = "Cancelled",
 	BadRequest = "BadRequest",
 	Unprocessed = "Unprocessed",
 	InvalidResult = "InvalidResult",

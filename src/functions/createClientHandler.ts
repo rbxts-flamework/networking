@@ -5,6 +5,7 @@ import { createMiddlewareProcessor } from "../middleware/createMiddlewareProcess
 import { FunctionMiddlewareList, Middleware } from "../middleware/types";
 import { NetworkInfo } from "../types";
 import { ArbitaryGuards, ClientHandler, RequestInfo } from "./types";
+import { Skip } from "middleware/skip";
 
 export function createClientHandler<S, C>(
 	serverRemotes: Map<string, RemoteEvent>,
@@ -53,7 +54,12 @@ export function createClientHandler<S, C>(
 			}
 
 			const processor = processors.get(name);
-			remote.FireServer(id, processor !== undefined, processor && processor(undefined, ...args));
+			if (processor) {
+				const result = processor(undefined, ...args);
+				remote.FireServer(id, result === Skip ? NetworkingFunctionError.Cancelled : true, result);
+			} else {
+				remote.FireServer(id, false);
+			}
 		});
 	}
 
@@ -62,7 +68,7 @@ export function createClientHandler<S, C>(
 
 		const processor = createMiddlewareProcessor(
 			middlewareFactoryList?.[event as never],
-			networkInfos.get(event as string)!,
+			networkInfos.get(`${event}`)!,
 			(_, ...args) => (callback as unknown as (...args: unknown[]) => void)(...args),
 		);
 
