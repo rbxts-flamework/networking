@@ -2,7 +2,14 @@ import { GlobalEvent } from "./events/types";
 import { GlobalFunction } from "./functions/types";
 import { Skip as NetworkingSkip } from "middleware/skip";
 import { registerNetworkHandler as registerHandler } from "./handlers";
-import { EventMiddlewareList, FunctionMiddlewareList } from "./middleware/types";
+import { NetworkingFunctionError } from "functions/errors";
+import {
+	EventMiddlewareList,
+	FunctionMiddlewareList,
+	MiddlewareFactory as _MiddlewareFactory,
+	EventMiddleware as _EventMiddleware,
+	FunctionMiddleware as _FunctionMiddleware,
+} from "./middleware/types";
 
 export namespace Networking {
 	/**
@@ -34,4 +41,23 @@ export namespace Networking {
 	 * Stops networking function middleware.
 	 */
 	export const Skip = NetworkingSkip;
+
+	/**
+	 * A function that generates middleware.
+	 * @hidden
+	 * @deprecated Use {@link EventMiddleware} or {@link FunctionMiddleware}
+	 */
+	export type MiddlewareFactory<I extends readonly unknown[] = unknown[], O = void> = _MiddlewareFactory<I, O>;
+
+	/**
+	 * A function that generates an event middleware.
+	 */
+	export type EventMiddleware<I extends readonly unknown[] = unknown[]> = _EventMiddleware<I>;
+
+	/**
+	 * A function that generates an event middleware.
+	 */
+	export type FunctionMiddleware<I extends readonly unknown[] = unknown[], O = void> = _FunctionMiddleware<I, O>;
 }
+
+export { NetworkingFunctionError };
