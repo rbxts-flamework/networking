@@ -1,9 +1,9 @@
 import { Players } from "@rbxts/services";
-import { t } from "@rbxts/t";
+import { fireNetworkHandler } from "handlers";
 import { createMiddlewareProcessor } from "../middleware/createMiddlewareProcessor";
-import { EventMiddleware, EventMiddlewareList } from "../middleware/types";
+import { EventMiddlewareList } from "../middleware/types";
 import { NetworkInfo } from "../types";
-import { ArbitaryGuards, ServerHandler, ServerMethod } from "./types";
+import { ArbitaryGuards, ServerHandler } from "./types";
 
 export function createServerHandler<S, C>(
 	remotes: Map<string, RemoteEvent>,
@@ -27,9 +27,10 @@ export function createServerHandler<S, C>(
 	}
 
 	for (const [name, remote] of remotes) {
+		const networkInfo = networkInfos.get(name)!;
 		const middlewareProcessor = createMiddlewareProcessor(
 			middlewareFactoryList?.[name as never],
-			networkInfos.get(name)!,
+			networkInfo,
 			(player, ...args) => {
 				bindables.get(name)?.Fire(player, ...args);
 			},
@@ -42,6 +43,7 @@ export function createServerHandler<S, C>(
 			for (let i = 0; i < guards.size(); i++) {
 				const guard = guards[i];
 				if (!guard(args[i])) {
+					fireNetworkHandler("onBadRequest", player, networkInfo, i);
 					return;
 				}
 			}
@@ -94,7 +96,6 @@ function createServerMethod(remote: RemoteEvent) {
 			for (const player of Players.GetPlayers()) {
 				if (!players.includes(player)) {
 					this.fire(player);
-				} else {
 				}
 			}
 		},

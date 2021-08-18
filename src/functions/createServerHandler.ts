@@ -6,6 +6,7 @@ import { FunctionMiddlewareList, Middleware } from "../middleware/types";
 import { NetworkInfo } from "../types";
 import { ArbitaryGuards, RequestInfo, ServerHandler } from "./types";
 import { Skip } from "middleware/skip";
+import { fireNetworkHandler } from "handlers";
 
 export function createServerHandler<S, C>(
 	serverRemotes: Map<string, RemoteEvent>,
@@ -22,7 +23,8 @@ export function createServerHandler<S, C>(
 	for (const [alias, remote] of clientRemotes) {
 		// create server method
 		const name = alias.sub(3);
-		handler[name as keyof C] = createServerMethod(clientEvents[name][1], players, remote) as never;
+		const networkInfo = networkInfos.get(name)!;
+		handler[name as keyof C] = createServerMethod(clientEvents[name][1], networkInfo, players, remote) as never;
 
 		remote.OnServerEvent.Connect((player, id, processResult, result) => {
 			if (!typeIs(id, "number")) return;
@@ -40,6 +42,7 @@ export function createServerHandler<S, C>(
 	for (const [alias, remote] of serverRemotes) {
 		// invoke callback
 		const name = alias.sub(3);
+		const networkInfo = networkInfos.get(name)!;
 		remote.OnServerEvent.Connect((player, id, ...args) => {
 			const guards = serverEvents[name];
 			if (!guards) return;
@@ -47,6 +50,7 @@ export function createServerHandler<S, C>(
 			for (let i = 0; i < guards[0].size(); i++) {
 				const guard = guards[0][i];
 				if (!guard(args[i])) {
+					fireNetworkHandler("onBadRequest", player, networkInfo, i);
 					return remote.FireClient(player, id, NetworkingFunctionError.BadRequest);
 				}
 			}
@@ -80,7 +84,12 @@ export function createServerHandler<S, C>(
 	return handler;
 }
 
-function createServerMethod(guard: t.check<unknown>, players: Map<Player, RequestInfo>, remote: RemoteEvent) {
+function createServerMethod(
+	guard: t.check<unknown>,
+	networkInfo: NetworkInfo,
+	players: Map<Player, RequestInfo>,
+	remote: RemoteEvent,
+) {
 	const method = {
 		invoke(player: Player, ...args: unknown[]) {
 			return Promise.race([
@@ -90,7 +99,10 @@ function createServerMethod(guard: t.check<unknown>, players: Map<Player, Reques
 					const id = requestInfo.nextId++;
 					requestInfo.requests.set(id, (value, rejection) => {
 						if (rejection) return reject(rejection);
-						if (!guard(value)) return reject(NetworkingFunctionError.InvalidResult);
+						if (!guard(value)) {
+							fireNetworkHandler("onBadResponse", player, networkInfo);
+							return reject(NetworkingFunctionError.InvalidResult);
+						}
 
 						resolve(value);
 					});

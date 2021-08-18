@@ -1,3 +1,5 @@
+import { Players } from "@rbxts/services";
+import { fireNetworkHandler } from "handlers";
 import { createMiddlewareProcessor } from "../middleware/createMiddlewareProcessor";
 import { EventMiddlewareList, Middleware } from "../middleware/types";
 import { NetworkInfo } from "../types";
@@ -26,10 +28,10 @@ export function createClientHandler<S, C>(
 	}
 
 	for (const [name, remote] of remotes) {
-		const middlewareFactories = middlewareFactoryList !== undefined && middlewareFactoryList[name as keyof C];
+		const networkInfo = networkInfos.get(name)!;
 		const middlewareProcessor = createMiddlewareProcessor(
-			middlewareFactories || [],
-			networkInfos.get(name)!,
+			middlewareFactoryList?.[name as never],
+			networkInfo,
 			(_, ...args) => {
 				bindables.get(name)?.Fire(...args);
 			},
@@ -43,6 +45,7 @@ export function createClientHandler<S, C>(
 			for (let i = 0; i < guards.size(); i++) {
 				const guard = guards[i];
 				if (!guard(args[i])) {
+					fireNetworkHandler("onBadRequest", Players.LocalPlayer, networkInfo, i);
 					return;
 				}
 			}

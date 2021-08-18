@@ -6,6 +6,8 @@ import { FunctionMiddlewareList, Middleware } from "../middleware/types";
 import { NetworkInfo } from "../types";
 import { ArbitaryGuards, ClientHandler, RequestInfo } from "./types";
 import { Skip } from "middleware/skip";
+import { Players } from "@rbxts/services";
+import { fireNetworkHandler } from "handlers";
 
 export function createClientHandler<S, C>(
 	serverRemotes: Map<string, RemoteEvent>,
@@ -25,7 +27,8 @@ export function createClientHandler<S, C>(
 	for (const [alias, remote] of serverRemotes) {
 		// create server method
 		const name = alias.sub(3);
-		handler[name as keyof S] = createClientMethod(serverEvents[name][1], requestInfo, remote) as never;
+		const networkInfo = networkInfos.get(name)!;
+		handler[name as keyof S] = createClientMethod(serverEvents[name][1], networkInfo, requestInfo, remote) as never;
 
 		remote.OnClientEvent.Connect((id, processResult: boolean | string, result) => {
 			if (!typeIs(id, "number")) return;
@@ -42,6 +45,7 @@ export function createClientHandler<S, C>(
 	for (const [alias, remote] of clientRemotes) {
 		// invoke callback
 		const name = alias.sub(3);
+		const networkInfo = networkInfos.get(name)!;
 		remote.OnClientEvent.Connect((id, ...args: unknown[]) => {
 			const guards = clientEvents[name];
 			if (!guards) return;
@@ -49,6 +53,7 @@ export function createClientHandler<S, C>(
 			for (let i = 0; i < guards[0].size(); i++) {
 				const guard = guards[0][i];
 				if (!guard(args[i])) {
+					fireNetworkHandler("onBadRequest", Players.LocalPlayer, networkInfo, i);
 					return remote.FireServer(id, NetworkingFunctionError.BadRequest);
 				}
 			}
@@ -87,7 +92,12 @@ export function createClientHandler<S, C>(
 	return handler;
 }
 
-function createClientMethod(guard: t.check<unknown>, requestInfo: RequestInfo, remote: RemoteEvent) {
+function createClientMethod(
+	guard: t.check<unknown>,
+	networkInfo: NetworkInfo,
+	requestInfo: RequestInfo,
+	remote: RemoteEvent,
+) {
 	const method = {
 		invoke(...args: unknown[]) {
 			return Promise.race([
@@ -96,7 +106,10 @@ function createClientMethod(guard: t.check<unknown>, requestInfo: RequestInfo, r
 					const id = requestInfo.nextId++;
 					requestInfo.requests.set(id, (value, rejection) => {
 						if (rejection) return reject(rejection);
-						if (!guard(value)) return reject(NetworkingFunctionError.InvalidResult);
+						if (!guard(value)) {
+							fireNetworkHandler("onBadResponse", Players.LocalPlayer, networkInfo);
+							return reject(NetworkingFunctionError.InvalidResult);
+						}
 
 						resolve(value);
 					});
