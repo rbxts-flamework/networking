@@ -30,6 +30,7 @@ export function createServerHandler<S, C>(
 			processors,
 			networkInfo,
 			players,
+			name,
 			remote,
 		) as never;
 
@@ -86,6 +87,7 @@ function createServerMethod(
 	processors: Map<string, Middleware<unknown[], unknown>>,
 	networkInfo: NetworkInfo,
 	players: Map<Player, RequestInfo>,
+	name: string,
 	remote: RemoteEvent,
 ) {
 	const method: { [k in keyof ServerMethod]: ServerMethod[k] } = {
@@ -115,10 +117,10 @@ function createServerMethod(
 		},
 
 		setCallback(callback) {
-			if (processors.has(remote.Name)) warn("Function.setCallback was called multiple times.");
+			if (processors.has(name)) warn(`Function.setCallback was called multiple times for ${name}`);
 
 			const processor = createMiddlewareProcessor(middleware, networkInfo, callback as never);
-			processors.set(remote.Name, processor);
+			processors.set(name, processor);
 		},
 	};
 

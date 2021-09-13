@@ -24,18 +24,23 @@ export function createClientHandler<S, C>(
 		requests: new Map(),
 	};
 
-	for (const [alias, remote] of serverRemotes) {
-		// create server method
-		const name = alias.sub(3);
-		const networkInfo = networkInfos.get(name)!;
+	function createMethod(name: string, networkInfo: NetworkInfo, remote: RemoteEvent) {
+		if (handler[name as keyof S] !== undefined) return;
 		handler[name as keyof S] = createClientMethod(
-			serverEvents[name][1],
+			(serverEvents[name] ?? clientEvents[name])[1],
 			middlewareFactoryList?.[name as never] ?? [],
 			processors,
 			networkInfo,
 			requestInfo,
+			name,
 			remote,
 		) as never;
+	}
+
+	for (const [alias, remote] of serverRemotes) {
+		const name = alias.sub(3);
+		const networkInfo = networkInfos.get(name)!;
+		createMethod(name, networkInfo, remote);
 
 		remote.OnClientEvent.Connect((id, processResult: boolean | string, result) => {
 			if (!typeIs(id, "number")) return;
@@ -53,6 +58,8 @@ export function createClientHandler<S, C>(
 		// invoke callback
 		const name = alias.sub(3);
 		const networkInfo = networkInfos.get(name)!;
+		createMethod(name, networkInfo, remote);
+
 		remote.OnClientEvent.Connect((id, ...args: unknown[]) => {
 			const guards = clientEvents[name];
 			if (!guards) return;
@@ -85,6 +92,7 @@ function createClientMethod(
 	processors: Map<string, Middleware<unknown[], unknown>>,
 	networkInfo: NetworkInfo,
 	requestInfo: RequestInfo,
+	name: string,
 	remote: RemoteEvent,
 ) {
 	const method: { [k in keyof ClientMethod]: ClientMethod[k] } = {
@@ -113,15 +121,15 @@ function createClientMethod(
 		},
 
 		setCallback(callback) {
-			if (processors.has(remote.Name)) warn(`Function.setCallback was called multiple times for ${remote.Name}`);
+			if (processors.has(name)) warn(`Function.setCallback was called multiple times for ${name}`);
 
 			const processor = createMiddlewareProcessor(middleware, networkInfo, (_, ...args) => callback(...args));
-			processors.set(remote.Name, processor);
+			processors.set(name, processor);
 		},
 
 		predict(...args) {
 			return new Promise((resolve, reject) => {
-				const processor = processors.get(remote.Name);
+				const processor = processors.get(name);
 				if (!processor) return reject(NetworkingFunctionError.Unprocessed);
 
 				resolve(processor(undefined, ...args) as never);
