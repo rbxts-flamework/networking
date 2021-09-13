@@ -48,9 +48,7 @@ export function createClientHandler<S, C>(
 		});
 	}
 
-	for (const [name] of pairs(serverEvents)) {
-		const remote = remotes.get(name as string)!;
-
+	for (const [name, remote] of remotes) {
 		handler[name as keyof S] = createClientMethod(
 			remote,
 			clientEvents[remote.Name]?.size() ?? 0,
@@ -80,7 +78,7 @@ function createClientMethod(
 			return bindable.Event.Connect((...args: unknown[]) => {
 				if (customGuards) {
 					for (let i = 0; i < paramCount; i++) {
-						const guard = customGuards[i + 1];
+						const guard = customGuards[i];
 						if (guard !== undefined && !guard(args[i])) {
 							return;
 						}

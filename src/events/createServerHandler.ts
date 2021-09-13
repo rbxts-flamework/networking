@@ -46,9 +46,7 @@ export function createServerHandler<S, C>(
 		});
 	}
 
-	for (const [name] of pairs(clientEvents)) {
-		const remote = remotes.get(name as string)!;
-
+	for (const [name, remote] of remotes) {
 		handler[name as keyof C] = createServerMethod(
 			remote,
 			serverEvents[name]?.size() ?? 0,
@@ -92,7 +90,7 @@ function createServerMethod(remote: RemoteEvent, paramCount: number, bindable?: 
 			return bindable.Event.Connect((player: Player, ...args: unknown[]) => {
 				if (customGuards) {
 					for (let i = 0; i < paramCount; i++) {
-						const guard = customGuards[i + 1];
+						const guard = customGuards[i];
 						if (guard !== undefined && !guard(args[i])) {
 							return;
 						}
