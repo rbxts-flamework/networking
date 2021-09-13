@@ -2,9 +2,9 @@ export {};
 import { t } from "@rbxts/t";
 import { getFunctionError, NetworkingFunctionError } from "./errors";
 import { createMiddlewareProcessor } from "../middleware/createMiddlewareProcessor";
-import { FunctionMiddlewareList, Middleware } from "../middleware/types";
+import { FunctionMiddlewareList, Middleware, MiddlewareFactory } from "../middleware/types";
 import { NetworkInfo } from "../types";
-import { ArbitaryGuards, ClientHandler, RequestInfo } from "./types";
+import { ArbitaryGuards, ClientHandler, ClientReceiver, ClientSender, RequestInfo } from "./types";
 import { Skip } from "middleware/skip";
 import { Players } from "@rbxts/services";
 import { fireNetworkHandler } from "handlers";
@@ -28,7 +28,14 @@ export function createClientHandler<S, C>(
 		// create server method
 		const name = alias.sub(3);
 		const networkInfo = networkInfos.get(name)!;
-		handler[name as keyof S] = createClientMethod(serverEvents[name][1], networkInfo, requestInfo, remote) as never;
+		handler[name as keyof S] = createClientMethod(
+			serverEvents[name][1],
+			middlewareFactoryList?.[name as never] ?? [],
+			processors,
+			networkInfo,
+			requestInfo,
+			remote,
+		) as never;
 
 		remote.OnClientEvent.Connect((id, processResult: boolean | string, result) => {
 			if (!typeIs(id, "number")) return;
@@ -68,37 +75,19 @@ export function createClientHandler<S, C>(
 		});
 	}
 
-	handler.setCallback = function (this: unknown, event, callback) {
-		if (processors.has(event as string)) warn(`Function.setCallback was called multiple times for ${event}`);
-
-		const processor = createMiddlewareProcessor(
-			middlewareFactoryList?.[event as never],
-			networkInfos.get(`${event}`)!,
-			(_, ...args) => (callback as unknown as (...args: unknown[]) => void)(...args),
-		);
-
-		processors.set(event as string, processor);
-	};
-
-	handler.predict = function (this: unknown, event, ...args) {
-		return new Promise((resolve, reject) => {
-			const processor = processors.get(event as string);
-			if (!processor) return reject(NetworkingFunctionError.Unprocessed);
-
-			resolve(processor(undefined, ...args) as never);
-		});
-	};
-
 	return handler;
 }
 
+type ClientMethod = ClientSender<unknown[], unknown> & ClientReceiver<unknown[], unknown>;
 function createClientMethod(
 	guard: t.check<unknown>,
+	middleware: MiddlewareFactory<unknown[], unknown>[],
+	processors: Map<string, Middleware<unknown[], unknown>>,
 	networkInfo: NetworkInfo,
 	requestInfo: RequestInfo,
 	remote: RemoteEvent,
 ) {
-	const method = {
+	const method: { [k in keyof ClientMethod]: ClientMethod[k] } = {
 		invoke(...args: unknown[]) {
 			return Promise.race([
 				timeout(10, NetworkingFunctionError.Timeout),
@@ -121,6 +110,22 @@ function createClientMethod(
 					remote.FireServer(id, ...args);
 				}),
 			]);
+		},
+
+		setCallback(callback) {
+			if (processors.has(remote.Name)) warn(`Function.setCallback was called multiple times for ${remote.Name}`);
+
+			const processor = createMiddlewareProcessor(middleware, networkInfo, (_, ...args) => callback(...args));
+			processors.set(remote.Name, processor);
+		},
+
+		predict(...args) {
+			return new Promise((resolve, reject) => {
+				const processor = processors.get(remote.Name);
+				if (!processor) return reject(NetworkingFunctionError.Unprocessed);
+
+				resolve(processor(undefined, ...args) as never);
+			});
 		},
 	};
 

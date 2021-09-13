@@ -3,7 +3,7 @@ import { fireNetworkHandler } from "handlers";
 import { createMiddlewareProcessor } from "../middleware/createMiddlewareProcessor";
 import { EventMiddlewareList } from "../middleware/types";
 import { NetworkInfo } from "../types";
-import { ArbitaryGuards, ServerHandler } from "./types";
+import { ArbitaryGuards, ServerHandler, ServerReceiver, ServerSender } from "./types";
 
 export function createServerHandler<S, C>(
 	remotes: Map<string, RemoteEvent>,
@@ -18,12 +18,6 @@ export function createServerHandler<S, C>(
 	for (const [name] of pairs(serverEvents)) {
 		const bindable = new Instance("BindableEvent");
 		bindables.set(name as string, bindable);
-	}
-
-	for (const [name] of pairs(clientEvents)) {
-		const remote = remotes.get(name as string)!;
-
-		handler[name as keyof C] = createServerMethod(remote) as never;
 	}
 
 	for (const [name, remote] of remotes) {
@@ -52,31 +46,23 @@ export function createServerHandler<S, C>(
 		});
 	}
 
-	handler.connect = function (this: unknown, event, callback, customGuards) {
-		const bindable = bindables.get(event as string);
-		const guards = serverEvents[event as string];
-		assert(bindable, `Could not find bindable for ${event}`);
-		assert(guards, `Could not find guards for ${event}`);
+	for (const [name] of pairs(clientEvents)) {
+		const remote = remotes.get(name as string)!;
 
-		return bindable.Event.Connect((player: Player, ...args: unknown[]) => {
-			if (customGuards) {
-				for (let i = 0; i < guards.size(); i++) {
-					const guard = customGuards[i + 1];
-					if (guard !== undefined && !guard(args[i])) {
-						return;
-					}
-				}
-			}
-			return callback(player, ...(args as never));
-		});
-	};
+		handler[name as keyof C] = createServerMethod(
+			remote,
+			serverEvents[name]?.size() ?? 0,
+			bindables.get(name as string),
+		) as never;
+	}
 
 	return handler;
 }
 
-function createServerMethod(remote: RemoteEvent) {
-	const method = {
-		fire(players: Player | Player[], ...args: unknown[]) {
+type ServerMethod = ServerSender<unknown[]> & ServerReceiver<unknown[]>;
+function createServerMethod(remote: RemoteEvent, paramCount: number, bindable?: BindableEvent) {
+	const method: { [k in keyof ServerMethod]: ServerMethod[k] } = {
+		fire(players, ...args) {
 			if (typeIs(players, "Instance")) {
 				remote.FireClient(players, ...args);
 			} else {
@@ -86,18 +72,34 @@ function createServerMethod(remote: RemoteEvent) {
 			}
 		},
 
-		broadcast(...args: unknown[]) {
+		broadcast(...args) {
 			remote.FireAllClients(...args);
 		},
 
-		except(players: Player | Player[], ...args: unknown[]) {
+		except(players, ...args) {
 			if (typeIs(players, "Instance")) players = [players];
 
 			for (const player of Players.GetPlayers()) {
 				if (!players.includes(player)) {
-					this.fire(player);
+					this.fire(player, ...args);
 				}
 			}
+		},
+
+		connect(callback, customGuards) {
+			assert(bindable, `Event ${remote.Name} is not registered as a receiver.`);
+
+			return bindable.Event.Connect((player: Player, ...args: unknown[]) => {
+				if (customGuards) {
+					for (let i = 0; i < paramCount; i++) {
+						const guard = customGuards[i + 1];
+						if (guard !== undefined && !guard(args[i])) {
+							return;
+						}
+					}
+				}
+				return callback(player, ...(args as never));
+			});
 		},
 	};
 

@@ -3,7 +3,7 @@ import { fireNetworkHandler } from "handlers";
 import { createMiddlewareProcessor } from "../middleware/createMiddlewareProcessor";
 import { EventMiddlewareList, Middleware } from "../middleware/types";
 import { NetworkInfo } from "../types";
-import { ArbitaryGuards, ClientHandler } from "./types";
+import { ArbitaryGuards, ClientHandler, ClientReceiver, ClientSender } from "./types";
 
 export function createClientHandler<S, C>(
 	remotes: Map<string, RemoteEvent>,
@@ -19,12 +19,6 @@ export function createClientHandler<S, C>(
 	for (const [name] of pairs(clientEvents)) {
 		const bindable = new Instance("BindableEvent");
 		bindables.set(name as string, bindable);
-	}
-
-	for (const [name] of pairs(serverEvents)) {
-		const remote = remotes.get(name as string)!;
-
-		handler[name as keyof S] = createClientMethod(remote) as never;
 	}
 
 	for (const [name, remote] of remotes) {
@@ -54,36 +48,52 @@ export function createClientHandler<S, C>(
 		});
 	}
 
-	handler.connect = function (this: unknown, event, callback, customGuards) {
-		const bindable = bindables.get(event as string);
-		const guards = clientEvents[event as string];
-		assert(bindable, `Could not find bindable for ${event}`);
-		assert(guards, `Could not find guards for ${event}`);
+	for (const [name] of pairs(serverEvents)) {
+		const remote = remotes.get(name as string)!;
 
-		return bindable.Event.Connect((...args: unknown[]) => {
-			if (customGuards) {
-				for (let i = 0; i < guards.size(); i++) {
-					const guard = customGuards[i + 1];
-					if (guard !== undefined && !guard(args[i])) {
-						return;
-					}
-				}
-			}
-			return callback(...(args as never));
-		});
-	};
-
-	handler.predict = function (this: unknown, event, ...args) {
-		processors.get(event as string)?.(undefined, ...args);
-	};
+		handler[name as keyof S] = createClientMethod(
+			remote,
+			clientEvents[remote.Name]?.size() ?? 0,
+			bindables.get(remote.Name),
+			processors.get(remote.Name),
+		) as never;
+	}
 
 	return handler;
 }
 
-function createClientMethod(remote: RemoteEvent) {
-	const method = {
-		fire(...args: unknown[]) {
+type ClientMethod = ClientSender<unknown[]> & ClientReceiver<unknown[]>;
+function createClientMethod(
+	remote: RemoteEvent,
+	paramCount: number,
+	bindable?: BindableEvent,
+	process?: Middleware<unknown[], unknown>,
+) {
+	const method: { [k in keyof ClientMethod]: ClientMethod[k] } = {
+		fire(...args) {
 			remote.FireServer(...args);
+		},
+
+		connect(callback, customGuards) {
+			assert(bindable, `Event ${remote.Name} is not registered as a receiver.`);
+
+			return bindable.Event.Connect((...args: unknown[]) => {
+				if (customGuards) {
+					for (let i = 0; i < paramCount; i++) {
+						const guard = customGuards[i + 1];
+						if (guard !== undefined && !guard(args[i])) {
+							return;
+						}
+					}
+				}
+				return callback(...(args as never));
+			});
+		},
+
+		predict(...args) {
+			assert(process, `Event ${remote.Name} does not have a middleware processor.`);
+
+			process(undefined, ...args);
 		},
 	};
 
