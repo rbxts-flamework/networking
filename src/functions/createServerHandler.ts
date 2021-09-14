@@ -20,12 +20,10 @@ export function createServerHandler<S, C>(
 	const processors = new Map<string, Middleware<unknown[], unknown>>();
 	const players = new Map<Player, RequestInfo>();
 
-	for (const [alias, remote] of clientRemotes) {
-		// create server method
-		const name = alias.sub(3);
-		const networkInfo = networkInfos.get(name)!;
+	function createMethod(name: string, networkInfo: NetworkInfo, remote: RemoteEvent) {
+		if (handler[name as keyof C] !== undefined) return;
 		handler[name as keyof C] = createServerMethod(
-			clientEvents[name][1],
+			(serverEvents[name] ?? clientEvents[name])[1],
 			middlewareFactoryList?.[name as never] ?? [],
 			processors,
 			networkInfo,
@@ -33,6 +31,13 @@ export function createServerHandler<S, C>(
 			name,
 			remote,
 		) as never;
+	}
+
+	for (const [alias, remote] of clientRemotes) {
+		// create server method
+		const name = alias.sub(3);
+		const networkInfo = networkInfos.get(name)!;
+		createMethod(name, networkInfo, remote);
 
 		remote.OnServerEvent.Connect((player, id, processResult, result) => {
 			if (!typeIs(id, "number")) return;
@@ -51,6 +56,8 @@ export function createServerHandler<S, C>(
 		// invoke callback
 		const name = alias.sub(3);
 		const networkInfo = networkInfos.get(name)!;
+		createMethod(name, networkInfo, remote);
+
 		remote.OnServerEvent.Connect((player, id, ...args) => {
 			const guards = serverEvents[name];
 			if (!guards) return;
