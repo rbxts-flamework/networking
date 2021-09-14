@@ -2,9 +2,9 @@ import { Players } from "@rbxts/services";
 import { t } from "@rbxts/t";
 import { getFunctionError, NetworkingFunctionError } from "./errors";
 import { createMiddlewareProcessor } from "../middleware/createMiddlewareProcessor";
-import { FunctionMiddlewareList, Middleware } from "../middleware/types";
+import { FunctionMiddlewareList, Middleware, MiddlewareFactory } from "../middleware/types";
 import { NetworkInfo } from "../types";
-import { ArbitaryGuards, RequestInfo, ServerHandler } from "./types";
+import { ArbitaryGuards, RequestInfo, ServerHandler, ServerReceiver, ServerSender } from "./types";
 import { Skip } from "middleware/skip";
 import { fireNetworkHandler } from "handlers";
 
@@ -24,7 +24,15 @@ export function createServerHandler<S, C>(
 		// create server method
 		const name = alias.sub(3);
 		const networkInfo = networkInfos.get(name)!;
-		handler[name as keyof C] = createServerMethod(clientEvents[name][1], networkInfo, players, remote) as never;
+		handler[name as keyof C] = createServerMethod(
+			clientEvents[name][1],
+			middlewareFactoryList?.[name as never] ?? [],
+			processors,
+			networkInfo,
+			players,
+			name,
+			remote,
+		) as never;
 
 		remote.OnServerEvent.Connect((player, id, processResult, result) => {
 			if (!typeIs(id, "number")) return;
@@ -65,18 +73,6 @@ export function createServerHandler<S, C>(
 		});
 	}
 
-	handler.setCallback = function (this: unknown, event, callback) {
-		if (processors.has(event as string)) warn("Function.setCallback was called multiple times.");
-
-		const processor = createMiddlewareProcessor(
-			middlewareFactoryList?.[event as never],
-			networkInfos.get(`${event}`)!,
-			callback as never,
-		);
-
-		processors.set(event as string, processor);
-	};
-
 	Players.PlayerRemoving.Connect((player) => {
 		players.delete(player);
 	});
@@ -84,13 +80,17 @@ export function createServerHandler<S, C>(
 	return handler;
 }
 
+type ServerMethod = ServerSender<unknown[], unknown> & ServerReceiver<unknown[], unknown>;
 function createServerMethod(
 	guard: t.check<unknown>,
+	middleware: MiddlewareFactory<unknown[], unknown>[],
+	processors: Map<string, Middleware<unknown[], unknown>>,
 	networkInfo: NetworkInfo,
 	players: Map<Player, RequestInfo>,
+	name: string,
 	remote: RemoteEvent,
 ) {
-	const method = {
+	const method: { [k in keyof ServerMethod]: ServerMethod[k] } = {
 		invoke(player: Player, ...args: unknown[]) {
 			return Promise.race([
 				timeout(10, NetworkingFunctionError.Timeout),
@@ -114,6 +114,13 @@ function createServerMethod(
 					remote.FireClient(player, id, ...args);
 				}),
 			]);
+		},
+
+		setCallback(callback) {
+			if (processors.has(name)) warn(`Function.setCallback was called multiple times for ${name}`);
+
+			const processor = createMiddlewareProcessor(middleware, networkInfo, callback as never);
+			processors.set(name, processor);
 		},
 	};
 
