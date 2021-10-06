@@ -132,7 +132,7 @@ function createClientMethod(
 				const processor = processors.get(name);
 				if (!processor) return reject(NetworkingFunctionError.Unprocessed);
 
-				resolve(processor(undefined, ...args) as never);
+				resolve(processor(undefined, ...args));
 			});
 		},
 	};

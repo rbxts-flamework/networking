@@ -129,6 +129,15 @@ function createServerMethod(
 			const processor = createMiddlewareProcessor(middleware, networkInfo, callback as never);
 			processors.set(name, processor);
 		},
+
+		predict(player, ...args) {
+			return new Promise((resolve, reject) => {
+				const processor = processors.get(name);
+				if (!processor) return reject(NetworkingFunctionError.Unprocessed);
+
+				resolve(processor(player, ...args));
+			});
+		},
 	};
 
 	setmetatable(method, {

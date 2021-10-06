@@ -20,6 +20,12 @@ export interface ServerReceiver<I extends unknown[], O> {
 	 * @param guards A list of guards that will only be used on this connection
 	 */
 	setCallback(callback: (player: Player, ...args: I) => O): void;
+
+	/**
+	 * Invokes a server function using player as the sender.
+	 * @param event The function to fire
+	 */
+	predict(player: Player, ...args: I): Promise<O>;
 }
 
 export interface ClientSender<I extends unknown[], O> {
