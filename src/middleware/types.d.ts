@@ -1,9 +1,13 @@
 import { NetworkInfo } from "../types";
 import { Skip } from "./skip";
 
-export type Middleware<I extends readonly unknown[] = unknown[], O = void> = (player?: Player, ...args: I) => O;
+export type MiddlewareProcessor<I extends readonly unknown[], O> = (player?: Player, ...args: I) => Promise<O>;
+export type Middleware<I extends readonly unknown[] = unknown[], O = void> = (
+	player?: Player,
+	...args: I
+) => O | Promise<O>;
 export type MiddlewareFactory<I extends readonly unknown[] = [], O = void> = (
-	processNext: Middleware<I, O>,
+	processNext: MiddlewareProcessor<I, O>,
 	event: NetworkInfo,
 ) => Middleware<I, O>;
 

@@ -2,7 +2,7 @@ export {};
 import { t } from "@rbxts/t";
 import { getFunctionError, NetworkingFunctionError } from "./errors";
 import { createMiddlewareProcessor } from "../middleware/createMiddlewareProcessor";
-import { FunctionMiddlewareList, Middleware, MiddlewareFactory } from "../middleware/types";
+import { FunctionMiddlewareList, Middleware, MiddlewareFactory, MiddlewareProcessor } from "../middleware/types";
 import { NetworkInfo } from "../types";
 import { ArbitaryGuards, ClientHandler, ClientReceiver, ClientSender, RequestInfo } from "./types";
 import { Skip } from "middleware/skip";
@@ -18,7 +18,7 @@ export function createClientHandler<S, C>(
 	middlewareFactoryList?: FunctionMiddlewareList<C>,
 ): ClientHandler<S, C> {
 	const handler = {} as ClientHandler<S, C>;
-	const processors = new Map<string, Middleware<unknown[], unknown>>();
+	const processors = new Map<string, MiddlewareProcessor<unknown[], unknown>>();
 	const requestInfo: RequestInfo = {
 		nextId: 0,
 		requests: new Map(),
@@ -75,7 +75,13 @@ export function createClientHandler<S, C>(
 			const processor = processors.get(name);
 			if (processor) {
 				const result = processor(undefined, ...args);
-				remote.FireServer(id, result === Skip ? NetworkingFunctionError.Cancelled : true, result);
+				result
+					.then((value) => remote.FireServer(id, getProcessResult(value), value))
+					.catch((reason) => {
+						warn(`Failed to process request to ${name}`);
+						warn(reason);
+						remote.FireServer(id, false);
+					});
 			} else {
 				remote.FireServer(id, false);
 			}
@@ -148,4 +154,8 @@ function createClientMethod(
 
 function timeout(timeout: number, rejectValue: unknown) {
 	return Promise.delay(timeout).then(() => Promise.reject(rejectValue));
+}
+
+function getProcessResult(value: unknown) {
+	return value === Skip ? NetworkingFunctionError.Cancelled : true;
 }

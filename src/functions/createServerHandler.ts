@@ -2,7 +2,7 @@ import { Players } from "@rbxts/services";
 import { t } from "@rbxts/t";
 import { getFunctionError, NetworkingFunctionError } from "./errors";
 import { createMiddlewareProcessor } from "../middleware/createMiddlewareProcessor";
-import { FunctionMiddlewareList, Middleware, MiddlewareFactory } from "../middleware/types";
+import { FunctionMiddlewareList, Middleware, MiddlewareFactory, MiddlewareProcessor } from "../middleware/types";
 import { NetworkInfo } from "../types";
 import { ArbitaryGuards, RequestInfo, ServerHandler, ServerReceiver, ServerSender } from "./types";
 import { Skip } from "middleware/skip";
@@ -17,7 +17,7 @@ export function createServerHandler<S, C>(
 	middlewareFactoryList?: FunctionMiddlewareList<S>,
 ): ServerHandler<C, S> {
 	const handler = {} as ServerHandler<C, S>;
-	const processors = new Map<string, Middleware<unknown[], unknown>>();
+	const processors = new Map<string, MiddlewareProcessor<unknown[], unknown>>();
 	const players = new Map<Player, RequestInfo>();
 
 	function createMethod(name: string, networkInfo: NetworkInfo, remote: RemoteEvent) {
@@ -73,7 +73,13 @@ export function createServerHandler<S, C>(
 			const processor = processors.get(name);
 			if (processor) {
 				const result = processor(player, ...args);
-				remote.FireClient(player, id, result === Skip ? NetworkingFunctionError.Cancelled : true, result);
+				result
+					.then((value) => remote.FireClient(player, id, getProcessResult(value), value))
+					.catch((reason) => {
+						warn(`Failed to process request to ${name}`);
+						warn(reason);
+						remote.FireClient(player, id, false);
+					});
 			} else {
 				remote.FireClient(player, id, false);
 			}
@@ -164,4 +170,8 @@ function getRequestInfo(player: Player, map: Map<Player, RequestInfo>) {
 
 function timeout(timeout: number, rejectValue: unknown) {
 	return Promise.delay(timeout).then(() => Promise.reject(rejectValue));
+}
+
+function getProcessResult(value: unknown) {
+	return value === Skip ? NetworkingFunctionError.Cancelled : true;
 }

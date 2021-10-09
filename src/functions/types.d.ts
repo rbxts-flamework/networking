@@ -19,7 +19,7 @@ export interface ServerReceiver<I extends unknown[], O> {
 	 * @param callback The callback that will be invoked
 	 * @param guards A list of guards that will only be used on this connection
 	 */
-	setCallback(callback: (player: Player, ...args: I) => O): void;
+	setCallback(callback: (player: Player, ...args: I) => O | Promise<O>): void;
 
 	/**
 	 * Invokes a server function using player as the sender.
@@ -43,7 +43,7 @@ export interface ClientReceiver<I extends unknown[], O> {
 	 * @param event The function to connect to
 	 * @param callback The callback that will be invoked
 	 */
-	setCallback(callback: (...args: I) => O): void;
+	setCallback(callback: (...args: I) => O | Promise<O>): void;
 
 	/**
 	 * Invokes a client function.

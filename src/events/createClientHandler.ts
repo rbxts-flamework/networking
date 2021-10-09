@@ -26,9 +26,7 @@ export function createClientHandler<S, C>(
 		const middlewareProcessor = createMiddlewareProcessor(
 			middlewareFactoryList?.[name as never],
 			networkInfo,
-			(_, ...args) => {
-				bindables.get(name)?.Fire(...args);
-			},
+			(_, ...args) => bindables.get(name)?.Fire(...args),
 		);
 
 		processors.set(name, middlewareProcessor);

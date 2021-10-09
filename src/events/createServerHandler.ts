@@ -25,9 +25,7 @@ export function createServerHandler<S, C>(
 		const middlewareProcessor = createMiddlewareProcessor(
 			middlewareFactoryList?.[name as never],
 			networkInfo,
-			(player, ...args) => {
-				bindables.get(name)?.Fire(player, ...args);
-			},
+			(player, ...args) => bindables.get(name)?.Fire(player, ...args),
 		);
 
 		remote.OnServerEvent.Connect((player, ...args) => {
