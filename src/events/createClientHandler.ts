@@ -49,9 +49,9 @@ export function createClientHandler<S, C>(
 	for (const [name, remote] of remotes) {
 		handler[name as keyof S] = createClientMethod(
 			remote,
-			clientEvents[remote.Name]?.size() ?? 0,
-			bindables.get(remote.Name),
-			processors.get(remote.Name),
+			clientEvents[name]?.size() ?? 0,
+			bindables.get(name),
+			processors.get(name),
 		) as never;
 	}
 

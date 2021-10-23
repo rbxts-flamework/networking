@@ -32,6 +32,11 @@ export interface ServerReceiver<I extends unknown[]> {
 		cb: (player: Player, ...args: F) => void,
 		guards?: { [k in keyof F]?: t.check<F[k]> },
 	): RBXScriptConnection;
+
+	/**
+	 * Fires a server event using player as the sender.
+	 */
+	predict(player: Player, ...args: I): void;
 }
 
 export interface ClientSender<I extends unknown[]> {
@@ -52,7 +57,7 @@ export interface ClientReceiver<I extends unknown[]> {
 	connect<F extends I>(cb: (...args: F) => void, guards?: { [k in keyof F]?: t.check<F[k]> }): RBXScriptConnection;
 
 	/**
-	 * Fires this event locally.
+	 * Fires a client event.
 	 */
 	predict(...args: I): void;
 }

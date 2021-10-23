@@ -23,7 +23,6 @@ export interface ServerReceiver<I extends unknown[], O> {
 
 	/**
 	 * Invokes a server function using player as the sender.
-	 * @param event The function to fire
 	 */
 	predict(player: Player, ...args: I): Promise<O>;
 }
@@ -47,7 +46,6 @@ export interface ClientReceiver<I extends unknown[], O> {
 
 	/**
 	 * Invokes a client function.
-	 * @param event The function to fire
 	 */
 	predict(...args: I): Promise<O>;
 }
