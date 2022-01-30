@@ -12,7 +12,7 @@ export interface ServerSender<I extends unknown[]> {
 
 	/**
 	 * Sends this request to all players, excluding the specified player(s).
-	 * @param players The player(s) that will receive this event
+	 * @param players The player(s) that will not receive this event
 	 */
 	except(players: Player | Player[], ...args: I): void;
 
