@@ -1,5 +1,5 @@
 import { Players } from "@rbxts/services";
-import { fireNetworkHandler } from "handlers";
+import { fireNetworkHandler } from "../handlers";
 import { createMiddlewareProcessor } from "../middleware/createMiddlewareProcessor";
 import { EventMiddlewareList, Middleware } from "../middleware/types";
 import { NetworkInfo } from "../types";

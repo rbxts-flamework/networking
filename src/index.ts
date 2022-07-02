@@ -1,8 +1,8 @@
 import { GlobalEvent } from "./events/types";
 import { GlobalFunction } from "./functions/types";
-import { Skip as NetworkingSkip } from "middleware/skip";
+import { Skip as NetworkingSkip } from "./middleware/skip";
 import { registerNetworkHandler as registerHandler } from "./handlers";
-import { NetworkingFunctionError } from "functions/errors";
+import { NetworkingFunctionError } from "./functions/errors";
 import {
 	EventMiddlewareList,
 	FunctionMiddlewareList,

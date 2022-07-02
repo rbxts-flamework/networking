@@ -1,5 +1,5 @@
 import { t } from "@rbxts/t";
-import { NetworkingFunctionError } from "functions/errors";
+import { NetworkingFunctionError } from "../functions/errors";
 import { FunctionParameters, FunctionReturn, NetworkingObfuscationMarker, StripTSDoc } from "../types";
 
 export interface ServerSender<I extends unknown[], O> {

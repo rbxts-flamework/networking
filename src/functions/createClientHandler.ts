@@ -5,9 +5,9 @@ import { createMiddlewareProcessor } from "../middleware/createMiddlewareProcess
 import { FunctionMiddlewareList, Middleware, MiddlewareFactory, MiddlewareProcessor } from "../middleware/types";
 import { NetworkInfo } from "../types";
 import { ArbitaryGuards, ClientHandler, ClientReceiver, ClientSender, RequestInfo } from "./types";
-import { Skip } from "middleware/skip";
+import { Skip } from "../middleware/skip";
 import { Players } from "@rbxts/services";
-import { fireNetworkHandler } from "handlers";
+import { fireNetworkHandler } from "../handlers";
 
 export function createClientHandler<S, C>(
 	serverRemotes: Map<string, RemoteEvent>,
