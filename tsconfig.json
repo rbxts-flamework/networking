@@ -20,6 +20,7 @@
 		"incremental": false,
 		// "tsBuildInfoFile": "out/tsconfig.tsbuildinfo",
 		"declaration": true,
+		"moduleDetection": "force",
 
 		"experimentalDecorators": true,
 		"plugins": [
