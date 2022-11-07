@@ -75,4 +75,4 @@ export interface GlobalEvent<S, C> {
 	client: ClientHandler<S, C>;
 }
 
-export type ArbitaryGuards = { [key: string]: t.check<unknown>[] };
+export type ArbitaryGuards = { [key: string]: [t.check<unknown>[], t.check<unknown> | undefined] };

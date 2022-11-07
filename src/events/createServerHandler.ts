@@ -34,9 +34,12 @@ export function createServerHandler<S, C>(
 			const guards = serverEvents[name];
 			if (!guards) return;
 
-			for (let i = 0; i < guards.size(); i++) {
-				const guard = guards[i];
-				if (!guard(args[i])) {
+			const paramGuards = guards[0];
+			const restGuard = guards[1];
+
+			for (let i = 0; i < args.size(); i++) {
+				const guard = paramGuards[i] ?? restGuard;
+				if (guard && !guard(args[i])) {
 					fireNetworkHandler("onBadRequest", player, networkInfo, i);
 					return;
 				}
