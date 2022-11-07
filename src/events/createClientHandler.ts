@@ -15,21 +15,21 @@ export function createClientHandler<S, C>(
 	const handler = {} as ClientHandler<S, C>;
 	const bindables = new Map<string, BindableEvent>();
 	const processors = new Map<string, Middleware<unknown[], unknown>>();
+	const isSetup = new Set<string>();
 
 	for (const [name] of pairs(clientEvents)) {
 		const bindable = new Instance("BindableEvent");
 		bindables.set(name as string, bindable);
 	}
 
-	for (const [name, remote] of remotes) {
-		const networkInfo = networkInfos.get(name)!;
-		const middlewareProcessor = createMiddlewareProcessor(
-			middlewareFactoryList?.[name as never],
-			networkInfo,
-			(_, ...args) => bindables.get(name)?.Fire(...args),
-		);
+	const setupRemote = (name: string) => {
+		if (isSetup.has(name)) return;
+		isSetup.add(name);
 
-		processors.set(name, middlewareProcessor);
+		const remote = remotes.get(name)!;
+		const networkInfo = networkInfos.get(name)!;
+		const middlewareProcessor = processors.get(name)!;
+
 		remote.OnClientEvent.Connect((...args: unknown[]) => {
 			const guards = clientEvents[name];
 			if (!guards) return;
@@ -47,14 +47,23 @@ export function createClientHandler<S, C>(
 
 			middlewareProcessor(undefined, ...args);
 		});
-	}
+	};
 
 	for (const [name, remote] of remotes) {
+		const networkInfo = networkInfos.get(name)!;
+		const middlewareProcessor = createMiddlewareProcessor(
+			middlewareFactoryList?.[name as never],
+			networkInfo,
+			(_, ...args) => bindables.get(name)?.Fire(...args),
+		);
+
+		processors.set(name, middlewareProcessor);
 		handler[name as keyof S] = createClientMethod(
+			() => setupRemote(name),
 			remote,
 			clientEvents[name]?.size() ?? 0,
 			bindables.get(name),
-			processors.get(name),
+			middlewareProcessor,
 		) as never;
 	}
 
@@ -63,6 +72,7 @@ export function createClientHandler<S, C>(
 
 type ClientMethod = ClientSender<unknown[]> & ClientReceiver<unknown[]>;
 function createClientMethod(
+	connect: () => void,
 	remote: RemoteEvent,
 	paramCount: number,
 	bindable?: BindableEvent,
@@ -75,6 +85,7 @@ function createClientMethod(
 
 		connect(callback, customGuards) {
 			assert(bindable, `Event ${remote.Name} is not registered as a receiver.`);
+			task.defer(connect);
 
 			return bindable.Event.Connect((...args: unknown[]) => {
 				if (customGuards) {
