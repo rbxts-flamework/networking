@@ -68,4 +68,6 @@ export interface RequestInfo {
 	requests: Map<number, (value: unknown, rejection?: NetworkingFunctionError) => void>;
 }
 
-export type ArbitaryGuards = { [key: string]: [parameters: t.check<unknown>[], result: t.check<unknown>] };
+export type ArbitaryGuards = {
+	[key: string]: [parameters: [t.check<unknown>[], t.check<unknown> | undefined], result: t.check<unknown>];
+};
