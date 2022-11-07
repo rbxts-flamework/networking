@@ -63,7 +63,7 @@ export function createServerHandler<S, C>(
 			remote,
 			serverEvents[name]?.size() ?? 0,
 			bindables.get(name),
-			processors.get(name),
+			middlewareProcessor,
 		) as never;
 	}
 
