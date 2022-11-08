@@ -118,8 +118,12 @@ function createClientMethod(
 ) {
 	const method: { [k in keyof ClientMethod]: ClientMethod[k] } = {
 		invoke(...args: unknown[]) {
+			return this.invokeWithTimeout(config.defaultClientTimeout, ...args);
+		},
+
+		invokeWithTimeout(timeout: number, ...args: unknown[]) {
 			return Promise.race([
-				timeout(config.defaultClientTimeout, NetworkingFunctionError.Timeout),
+				timeoutPromise(timeout, NetworkingFunctionError.Timeout),
 				new Promise((resolve, reject, onCancel) => {
 					const id = requestInfo.nextId++;
 					requestInfo.requests.set(id, (value, rejection) => {
@@ -167,7 +171,7 @@ function createClientMethod(
 	return method;
 }
 
-function timeout(timeout: number, rejectValue: unknown) {
+function timeoutPromise(timeout: number, rejectValue: unknown) {
 	return Promise.delay(timeout).then(() => Promise.reject(rejectValue));
 }
 

@@ -120,8 +120,12 @@ function createServerMethod(
 ) {
 	const method: { [k in keyof ServerMethod]: ServerMethod[k] } = {
 		invoke(player: Player, ...args: unknown[]) {
+			return this.invokeWithTimeout(player, config.defaultServerTimeout, ...args);
+		},
+
+		invokeWithTimeout(player: Player, timeout: number, ...args: unknown[]) {
 			return Promise.race([
-				timeout(config.defaultServerTimeout, NetworkingFunctionError.Timeout),
+				timeoutPromise(timeout, NetworkingFunctionError.Timeout),
 				new Promise((resolve, reject, onCancel) => {
 					const requestInfo = getRequestInfo(player, players);
 					const id = requestInfo.nextId++;
@@ -183,7 +187,7 @@ function getRequestInfo(player: Player, map: Map<Player, RequestInfo>) {
 	return requestInfo;
 }
 
-function timeout(timeout: number, rejectValue: unknown) {
+function timeoutPromise(timeout: number, rejectValue: unknown) {
 	return Promise.delay(timeout).then(() => Promise.reject(rejectValue));
 }
 
