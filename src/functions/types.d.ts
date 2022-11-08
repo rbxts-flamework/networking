@@ -6,10 +6,17 @@ export interface ServerSender<I extends unknown[], O> {
 	(player: Player, ...args: I): Promise<O>;
 
 	/**
-	 * Sends this request to the specified player(s).
+	 * Sends this request to the specified player.
 	 * @param player The player that will receive this event
 	 */
 	invoke(player: Player, ...args: I): Promise<O>;
+
+	/**
+	 * Sends this request to the specified player, specifying a timeout.
+	 * @param player The player that will receive this event
+	 * @param timeout The maximum time to wait before timing out
+	 */
+	invokeWithTimeout(player: Player, timeout: number, ...args: I): Promise<O>;
 }
 
 export interface ServerReceiver<I extends unknown[], O> {
@@ -34,6 +41,12 @@ export interface ClientSender<I extends unknown[], O> {
 	 * Sends this request to the server.
 	 */
 	invoke(...args: I): Promise<O>;
+
+	/**
+	 * Sends this request to the server, specifying a timeout.
+	 * @param timeout The maximum time to wait before timing out
+	 */
+	invokeWithTimeout(timeout: number, ...args: I): Promise<O>;
 }
 
 export interface ClientReceiver<I extends unknown[], O> {
