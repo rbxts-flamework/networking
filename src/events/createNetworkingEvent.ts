@@ -5,7 +5,14 @@ import { NetworkInfo } from "../types";
 import { populateInstanceMap } from "../util/populateInstanceMap";
 import { createClientHandler } from "./createClientHandler";
 import { createServerHandler } from "./createServerHandler";
-import { ArbitaryGuards, GlobalEvent } from "./types";
+import { ArbitaryGuards, EventConfiguration, GlobalEvent } from "./types";
+
+function getDefaultConfiguration(config: Partial<EventConfiguration>) {
+	return identity<EventConfiguration>({
+		disableClientGuards: config.disableClientGuards ?? false,
+		disableServerGuards: config.disableServerGuards ?? false,
+	});
+}
 
 export function createNetworkingEvent<S, C>(
 	globalName: string,
@@ -13,7 +20,9 @@ export function createNetworkingEvent<S, C>(
 	clientEvents: ArbitaryGuards,
 	serverMiddleware?: EventMiddlewareList<S>,
 	clientMiddleware?: EventMiddlewareList<C>,
+	partialConfig: Partial<EventConfiguration> = {},
 ): GlobalEvent<S, C> {
+	const config = getDefaultConfiguration(partialConfig);
 	const networkInfos = new Map<string, NetworkInfo>();
 	const remotes = new Map<string, RemoteEvent>();
 
@@ -30,13 +39,13 @@ export function createNetworkingEvent<S, C>(
 
 	if (RunService.IsServer()) {
 		return {
-			server: createServerHandler(remotes, networkInfos, serverEvents, clientEvents, serverMiddleware),
+			server: createServerHandler(remotes, networkInfos, serverEvents, clientEvents, config, serverMiddleware),
 			client: undefined!,
 		};
 	} else {
 		return {
 			server: undefined!,
-			client: createClientHandler(remotes, networkInfos, serverEvents, clientEvents, clientMiddleware),
+			client: createClientHandler(remotes, networkInfos, serverEvents, clientEvents, config, clientMiddleware),
 		};
 	}
 }

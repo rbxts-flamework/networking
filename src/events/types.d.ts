@@ -75,4 +75,18 @@ export interface GlobalEvent<S, C> {
 	client: ClientHandler<S, C>;
 }
 
+export interface EventConfiguration {
+	/**
+	 * Disables input validation on the server, allowing any value to pass.
+	 * Defaults to `false`
+	 */
+	disableServerGuards: boolean;
+
+	/**
+	 * Disables input validation on the client, allowing any value to pass.
+	 * Defaults to `false`
+	 */
+	disableClientGuards: boolean;
+}
+
 export type ArbitaryGuards = { [key: string]: [t.check<unknown>[], t.check<unknown> | undefined] };

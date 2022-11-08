@@ -5,7 +5,16 @@ import { NetworkInfo } from "../types";
 import { populateInstanceMap } from "../util/populateInstanceMap";
 import { createClientHandler } from "./createClientHandler";
 import { createServerHandler } from "./createServerHandler";
-import { ArbitaryGuards, GlobalFunction } from "./types";
+import { ArbitaryGuards, FunctionConfiguration, GlobalFunction } from "./types";
+
+function getDefaultConfiguration(config: Partial<FunctionConfiguration>) {
+	return identity<FunctionConfiguration>({
+		disableClientGuards: config.disableClientGuards ?? false,
+		disableServerGuards: config.disableServerGuards ?? false,
+		defaultClientTimeout: config.defaultClientTimeout ?? 30,
+		defaultServerTimeout: config.defaultServerTimeout ?? 10,
+	});
+}
 
 export function createNetworkingFunction<S, C>(
 	globalName: string,
@@ -13,7 +22,9 @@ export function createNetworkingFunction<S, C>(
 	clientEvents: ArbitaryGuards,
 	serverMiddleware?: FunctionMiddlewareList<S>,
 	clientMiddleware?: FunctionMiddlewareList<C>,
+	partialConfig: Partial<FunctionConfiguration> = {},
 ): GlobalFunction<S, C> {
+	const config = getDefaultConfiguration(partialConfig);
 	const networkInfos = new Map<string, NetworkInfo>();
 	const serverRemotes = new Map<string, RemoteEvent>();
 	const clientRemotes = new Map<string, RemoteEvent>();
@@ -50,6 +61,7 @@ export function createNetworkingFunction<S, C>(
 				networkInfos,
 				serverEvents,
 				clientEvents,
+				config,
 				serverMiddleware,
 			),
 			client: undefined!,
@@ -63,6 +75,7 @@ export function createNetworkingFunction<S, C>(
 				networkInfos,
 				serverEvents,
 				clientEvents,
+				config,
 				clientMiddleware,
 			),
 		};

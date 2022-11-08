@@ -4,10 +4,17 @@ import { getFunctionError, NetworkingFunctionError } from "./errors";
 import { createMiddlewareProcessor } from "../middleware/createMiddlewareProcessor";
 import { FunctionMiddlewareList, Middleware, MiddlewareFactory, MiddlewareProcessor } from "../middleware/types";
 import { NetworkInfo } from "../types";
-import { ArbitaryGuards, ClientHandler, ClientReceiver, ClientSender, RequestInfo } from "./types";
 import { Skip } from "../middleware/skip";
 import { Players } from "@rbxts/services";
 import { fireNetworkHandler } from "../handlers";
+import {
+	ArbitaryGuards,
+	ClientHandler,
+	ClientReceiver,
+	ClientSender,
+	FunctionConfiguration,
+	RequestInfo,
+} from "./types";
 
 export function createClientHandler<S, C>(
 	serverRemotes: Map<string, RemoteEvent>,
@@ -15,6 +22,7 @@ export function createClientHandler<S, C>(
 	networkInfos: Map<string, NetworkInfo>,
 	serverEvents: ArbitaryGuards,
 	clientEvents: ArbitaryGuards,
+	config: FunctionConfiguration,
 	middlewareFactoryList?: FunctionMiddlewareList<C>,
 ): ClientHandler<S, C> {
 	const handler = {} as ClientHandler<S, C>;
@@ -34,6 +42,7 @@ export function createClientHandler<S, C>(
 			requestInfo,
 			name,
 			remote,
+			config,
 		) as never;
 	}
 
@@ -64,14 +73,16 @@ export function createClientHandler<S, C>(
 			const guards = clientEvents[name];
 			if (!guards) return;
 
-			const paramGuards = guards[0][0];
-			const restGuard = guards[0][1];
+			if (!config.disableClientGuards) {
+				const paramGuards = guards[0][0];
+				const restGuard = guards[0][1];
 
-			for (let i = 0; i < args.size(); i++) {
-				const guard = paramGuards[i] ?? restGuard;
-				if (guard && !guard(args[i])) {
-					fireNetworkHandler("onBadRequest", Players.LocalPlayer, networkInfo, i);
-					return remote.FireServer(id, NetworkingFunctionError.BadRequest);
+				for (let i = 0; i < args.size(); i++) {
+					const guard = paramGuards[i] ?? restGuard;
+					if (guard && !guard(args[i])) {
+						fireNetworkHandler("onBadRequest", Players.LocalPlayer, networkInfo, i);
+						return remote.FireServer(id, NetworkingFunctionError.BadRequest);
+					}
 				}
 			}
 
@@ -103,16 +114,17 @@ function createClientMethod(
 	requestInfo: RequestInfo,
 	name: string,
 	remote: RemoteEvent,
+	config: FunctionConfiguration,
 ) {
 	const method: { [k in keyof ClientMethod]: ClientMethod[k] } = {
 		invoke(...args: unknown[]) {
 			return Promise.race([
-				timeout(10, NetworkingFunctionError.Timeout),
+				timeout(config.defaultClientTimeout, NetworkingFunctionError.Timeout),
 				new Promise((resolve, reject, onCancel) => {
 					const id = requestInfo.nextId++;
 					requestInfo.requests.set(id, (value, rejection) => {
 						if (rejection) return reject(rejection);
-						if (!guard(value)) {
+						if (!config.disableClientGuards && !guard(value)) {
 							fireNetworkHandler("onBadResponse", Players.LocalPlayer, networkInfo);
 							return reject(NetworkingFunctionError.InvalidResult);
 						}
