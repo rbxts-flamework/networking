@@ -1,5 +1,5 @@
-import { GlobalEvent } from "./events/types";
-import { GlobalFunction } from "./functions/types";
+import { EventConfiguration, GlobalEvent } from "./events/types";
+import { FunctionConfiguration, GlobalFunction } from "./functions/types";
 import { Skip as NetworkingSkip } from "./middleware/skip";
 import { registerNetworkHandler as registerHandler } from "./handlers";
 import { NetworkingFunctionError } from "./functions/errors";
@@ -20,6 +20,7 @@ export namespace Networking {
 	export declare function createEvent<S, C>(
 		serverMiddleware?: EventMiddlewareList<S>,
 		clientMiddleware?: EventMiddlewareList<C>,
+		configOptions?: Partial<EventConfiguration>,
 	): GlobalEvent<S, C>;
 
 	/**
@@ -30,6 +31,7 @@ export namespace Networking {
 	export declare function createFunction<S, C>(
 		serverMiddleware?: FunctionMiddlewareList<S>,
 		clientMiddleware?: FunctionMiddlewareList<C>,
+		configOptions?: Partial<FunctionConfiguration>,
 	): GlobalFunction<S, C>;
 
 	/**

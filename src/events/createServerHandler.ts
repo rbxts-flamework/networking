@@ -3,13 +3,14 @@ import { fireNetworkHandler } from "../handlers";
 import { createMiddlewareProcessor } from "../middleware/createMiddlewareProcessor";
 import { EventMiddlewareList, Middleware } from "../middleware/types";
 import { NetworkInfo } from "../types";
-import { ArbitaryGuards, ServerHandler, ServerReceiver, ServerSender } from "./types";
+import { ArbitaryGuards, EventConfiguration, ServerHandler, ServerReceiver, ServerSender } from "./types";
 
 export function createServerHandler<S, C>(
 	remotes: Map<string, RemoteEvent>,
 	networkInfos: Map<string, NetworkInfo>,
 	serverEvents: ArbitaryGuards,
 	clientEvents: ArbitaryGuards,
+	config: EventConfiguration,
 	middlewareFactoryList?: EventMiddlewareList<S>,
 ): ServerHandler<C, S> {
 	const handler = {} as ServerHandler<C, S>;
@@ -34,14 +35,16 @@ export function createServerHandler<S, C>(
 			const guards = serverEvents[name];
 			if (!guards) return;
 
-			const paramGuards = guards[0];
-			const restGuard = guards[1];
+			if (!config.disableServerGuards) {
+				const paramGuards = guards[0];
+				const restGuard = guards[1];
 
-			for (let i = 0; i < args.size(); i++) {
-				const guard = paramGuards[i] ?? restGuard;
-				if (guard && !guard(args[i])) {
-					fireNetworkHandler("onBadRequest", player, networkInfo, i);
-					return;
+				for (let i = 0; i < args.size(); i++) {
+					const guard = paramGuards[i] ?? restGuard;
+					if (guard && !guard(args[i])) {
+						fireNetworkHandler("onBadRequest", player, networkInfo, i);
+						return;
+					}
 				}
 			}
 

@@ -63,6 +63,32 @@ export interface GlobalFunction<S, C> {
 	client: ClientHandler<S, C>;
 }
 
+export interface FunctionConfiguration {
+	/**
+	 * Disables input validation and return validation on the server, allowing any value to pass.
+	 * Defaults to `false`
+	 */
+	disableServerGuards: boolean;
+
+	/**
+	 * Disables input validation and return validation on the client, allowing any value to pass.
+	 * Defaults to `false`
+	 */
+	disableClientGuards: boolean;
+
+	/**
+	 * The default timeout for requests from the server to the client.
+	 * Defaults to `10`
+	 */
+	defaultServerTimeout: number;
+
+	/**
+	 * The default timeout for requests from the client to the server.
+	 * Defaults to `30`
+	 */
+	defaultClientTimeout: number;
+}
+
 export interface RequestInfo {
 	nextId: number;
 	requests: Map<number, (value: unknown, rejection?: NetworkingFunctionError) => void>;
