@@ -49,7 +49,7 @@ export function createServerHandler<S, C>(
 		createMethod(name, networkInfo, remote);
 
 		remote.OnServerEvent.Connect((player, id, processResult, result) => {
-			if (!typeIs(id, "number")) return;
+			if (!t.number(id)) return;
 
 			const requestInfo = getRequestInfo(player, players);
 			const request = requestInfo.requests.get(id);

@@ -52,7 +52,7 @@ export function createClientHandler<S, C>(
 		createMethod(name, networkInfo, remote);
 
 		remote.OnClientEvent.Connect((id, processResult: boolean | string, result) => {
-			if (!typeIs(id, "number")) return;
+			if (!t.number(id)) return;
 
 			const request = requestInfo.requests.get(id);
 			requestInfo.requests.delete(id);
