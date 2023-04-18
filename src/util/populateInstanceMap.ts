@@ -6,6 +6,15 @@ export function populateInstanceMap<T extends "RemoteEvent" | "RemoteFunction">(
 	names: string[],
 	map: Map<string, CreatableInstances[T]>,
 ) {
+	if (!RunService.IsRunning()) {
+		names.forEach((name) => {
+			const instance = new Instance(className);
+			instance.Name = name;
+			map.set(name, instance);
+		});
+		return;
+	}
+
 	let remotes = RunService.IsServer()
 		? ReplicatedStorage.FindFirstChild(globalName)
 		: ReplicatedStorage.WaitForChild(globalName);
