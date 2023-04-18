@@ -26,10 +26,8 @@ export function createNetworkingEvent<S, C>(
 	const networkInfos = new Map<string, NetworkInfo>();
 	const remotes = new Map<string, RemoteEvent>();
 
-	if (RunService.IsRunning()) {
-		populateInstanceMap("RemoteEvent", `events-${globalName}`, Object.keys(serverEvents) as string[], remotes);
-		populateInstanceMap("RemoteEvent", `events-${globalName}`, Object.keys(clientEvents) as string[], remotes);
-	}
+	populateInstanceMap("RemoteEvent", `events-${globalName}`, Object.keys(serverEvents) as string[], remotes);
+	populateInstanceMap("RemoteEvent", `events-${globalName}`, Object.keys(clientEvents) as string[], remotes);
 
 	for (const [name] of remotes) {
 		networkInfos.set(name, {

@@ -32,10 +32,8 @@ export function createNetworkingFunction<S, C>(
 	const serverNames = Object.keys(serverEvents).map((x) => `s:${x}`);
 	const clientNames = Object.keys(clientEvents).map((x) => `c:${x}`);
 
-	if (RunService.IsRunning()) {
-		populateInstanceMap("RemoteEvent", `functions-${globalName}`, serverNames, serverRemotes);
-		populateInstanceMap("RemoteEvent", `functions-${globalName}`, clientNames, clientRemotes);
-	}
+	populateInstanceMap("RemoteEvent", `functions-${globalName}`, serverNames, serverRemotes);
+	populateInstanceMap("RemoteEvent", `functions-${globalName}`, clientNames, clientRemotes);
 
 	for (const [alias] of serverRemotes) {
 		const name = alias.sub(3);
