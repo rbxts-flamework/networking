@@ -7,11 +7,11 @@ export function populateInstanceMap<T extends "RemoteEvent" | "RemoteFunction">(
 	map: Map<string, CreatableInstances[T]>,
 ) {
 	if (!RunService.IsRunning()) {
-		names.forEach((name) => {
+		for (const name of names) {
 			const instance = new Instance(className);
 			instance.Name = name;
 			map.set(name, instance);
-		});
+		}
 		return;
 	}
 
