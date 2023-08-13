@@ -80,6 +80,9 @@ export function createClientHandler<S, C>(
 				for (let i = 0; i < args.size(); i++) {
 					const guard = paramGuards[i] ?? restGuard;
 					if (guard && !guard(args[i])) {
+						if (config.warnOnInvalidGuards) {
+							warn(`Server sent invalid argument for event '${name}' (arg #${i}):`, args[i]);
+						}
 						fireNetworkHandler("onBadRequest", Players.LocalPlayer, networkInfo, i);
 						return remote.FireServer(id, NetworkingFunctionError.BadRequest);
 					}
@@ -129,6 +132,9 @@ function createClientMethod(
 					requestInfo.requests.set(id, (value, rejection) => {
 						if (rejection) return reject(rejection);
 						if (!config.disableClientGuards && !guard(value)) {
+							if (config.warnOnInvalidGuards) {
+								warn(`Server returned invalid value from event '${name}':`, value);
+							}
 							fireNetworkHandler("onBadResponse", Players.LocalPlayer, networkInfo);
 							return reject(NetworkingFunctionError.InvalidResult);
 						}

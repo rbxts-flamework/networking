@@ -42,6 +42,9 @@ export function createServerHandler<S, C>(
 				for (let i = 0; i < args.size(); i++) {
 					const guard = paramGuards[i] ?? restGuard;
 					if (guard && !guard(args[i])) {
+						if (config.warnOnInvalidGuards) {
+							warn(`'${player}' sent invalid arguments for event '${name}' (arg #${i}):`, args[i]);
+						}
 						fireNetworkHandler("onBadRequest", player, networkInfo, i);
 						return;
 					}

@@ -13,6 +13,7 @@ function getDefaultConfiguration(config: Partial<FunctionConfiguration>) {
 		disableServerGuards: config.disableServerGuards ?? false,
 		defaultClientTimeout: config.defaultClientTimeout ?? 30,
 		defaultServerTimeout: config.defaultServerTimeout ?? 10,
+		warnOnInvalidGuards: config.warnOnInvalidGuards ?? RunService.IsStudio(),
 	});
 }
 

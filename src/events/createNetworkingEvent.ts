@@ -11,6 +11,7 @@ function getDefaultConfiguration(config: Partial<EventConfiguration>) {
 	return identity<EventConfiguration>({
 		disableClientGuards: config.disableClientGuards ?? false,
 		disableServerGuards: config.disableServerGuards ?? false,
+		warnOnInvalidGuards: config.warnOnInvalidGuards ?? RunService.IsStudio(),
 	});
 }
 

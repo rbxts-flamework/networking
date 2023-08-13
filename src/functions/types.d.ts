@@ -100,6 +100,12 @@ export interface FunctionConfiguration {
 	 * Defaults to `30`
 	 */
 	defaultClientTimeout: number;
+
+	/**
+	 * Emit a warning whenever a guard fails.
+	 * Defaults to `RunService.IsStudio()`
+	 */
+	warnOnInvalidGuards: boolean;
 }
 
 export interface RequestInfo {

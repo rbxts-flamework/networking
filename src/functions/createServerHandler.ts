@@ -78,6 +78,9 @@ export function createServerHandler<S, C>(
 				for (let i = 0; i < args.size(); i++) {
 					const guard = paramGuards[i] ?? restGuard;
 					if (guard && !guard(args[i])) {
+						if (config.warnOnInvalidGuards) {
+							warn(`'${player}' sent invalid arguments for event '${name}' (arg #${i}):`, args[i]);
+						}
 						fireNetworkHandler("onBadRequest", player, networkInfo, i);
 						return remote.FireClient(player, id, NetworkingFunctionError.BadRequest);
 					}
@@ -132,6 +135,9 @@ function createServerMethod(
 					requestInfo.requests.set(id, (value, rejection) => {
 						if (rejection) return reject(rejection);
 						if (!config.disableServerGuards && !guard(value)) {
+							if (config.warnOnInvalidGuards) {
+								warn(`'${player}' returned invalid value from event '${name}':`, value);
+							}
 							fireNetworkHandler("onBadResponse", player, networkInfo);
 							return reject(NetworkingFunctionError.InvalidResult);
 						}
