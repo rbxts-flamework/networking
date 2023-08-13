@@ -87,6 +87,12 @@ export interface EventConfiguration {
 	 * Defaults to `false`
 	 */
 	disableClientGuards: boolean;
+
+	/**
+	 * Emit a warning whenever a guard fails.
+	 * Defaults to `RunService.IsStudio()`
+	 */
+	warnOnInvalidGuards: boolean;
 }
 
 export type ArbitaryGuards = { [key: string]: [t.check<unknown>[], t.check<unknown> | undefined] };
