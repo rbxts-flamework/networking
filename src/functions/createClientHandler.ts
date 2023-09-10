@@ -77,7 +77,7 @@ export function createClientHandler<S, C>(
 				const paramGuards = guards[0][0];
 				const restGuard = guards[0][1];
 
-				for (let i = 0; i < args.size(); i++) {
+				for (let i = 0; i < math.max(paramGuards.size(), args.size()); i++) {
 					const guard = paramGuards[i] ?? restGuard;
 					if (guard && !guard(args[i])) {
 						if (config.warnOnInvalidGuards) {
