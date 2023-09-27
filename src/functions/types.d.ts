@@ -1,6 +1,7 @@
 import { t } from "@rbxts/t";
 import { NetworkingFunctionError } from "../functions/errors";
 import { FunctionParameters, FunctionReturn, NetworkingObfuscationMarker, StripTSDoc } from "../types";
+import { FunctionNetworkingEvents } from "../handlers";
 
 export interface ServerSender<I extends unknown[], O> {
 	(player: Player, ...args: I): Promise<O>;
@@ -72,8 +73,25 @@ export type ClientHandler<E, R> = NetworkingObfuscationMarker &
 	{ [k in keyof StripTSDoc<R>]: ClientReceiver<FunctionParameters<R[k]>, FunctionReturn<R[k]>> };
 
 export interface GlobalFunction<S, C> {
+	/**
+	 * This is the server implementation of the network and does not exist on the client.
+	 */
 	server: ServerHandler<C, S>;
+
+	/**
+	 * This is the client implementation of the network and does not exist on the server.
+	 */
 	client: ClientHandler<S, C>;
+
+	/**
+	 * Registers a networking event handler.
+	 * @param key The name of the event
+	 * @param callback The handler you wish to attach
+	 */
+	registerHandler<K extends keyof FunctionNetworkingEvents>(
+		key: K,
+		callback: FunctionNetworkingEvents[K],
+	): RBXScriptConnection;
 }
 
 export interface FunctionConfiguration {

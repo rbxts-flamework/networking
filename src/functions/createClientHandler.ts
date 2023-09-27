@@ -6,7 +6,6 @@ import { FunctionMiddlewareList, Middleware, MiddlewareFactory, MiddlewareProces
 import { NetworkInfo } from "../types";
 import { Skip } from "../middleware/skip";
 import { Players } from "@rbxts/services";
-import { fireNetworkHandler } from "../handlers";
 import {
 	ArbitaryGuards,
 	ClientHandler,
@@ -15,6 +14,8 @@ import {
 	FunctionConfiguration,
 	RequestInfo,
 } from "./types";
+import { SignalContainer } from "../util/createSignalContainer";
+import { FunctionNetworkingEvents } from "../handlers";
 
 export function createClientHandler<S, C>(
 	serverRemotes: Map<string, RemoteEvent>,
@@ -23,6 +24,7 @@ export function createClientHandler<S, C>(
 	serverEvents: ArbitaryGuards,
 	clientEvents: ArbitaryGuards,
 	config: FunctionConfiguration,
+	signals: SignalContainer<FunctionNetworkingEvents>,
 	middlewareFactoryList?: FunctionMiddlewareList<C>,
 ): ClientHandler<S, C> {
 	const handler = {} as ClientHandler<S, C>;
@@ -43,6 +45,7 @@ export function createClientHandler<S, C>(
 			name,
 			remote,
 			config,
+			signals,
 		) as never;
 	}
 
@@ -83,7 +86,11 @@ export function createClientHandler<S, C>(
 						if (config.warnOnInvalidGuards) {
 							warn(`Server sent invalid argument for event '${name}' (arg #${i}):`, args[i]);
 						}
-						fireNetworkHandler("onBadRequest", Players.LocalPlayer, networkInfo, i);
+						signals.fire("onBadRequest", Players.LocalPlayer, {
+							networkInfo,
+							argIndex: i,
+							argValue: args[i],
+						});
 						return remote.FireServer(id, NetworkingFunctionError.BadRequest);
 					}
 				}
@@ -118,6 +125,7 @@ function createClientMethod(
 	name: string,
 	remote: RemoteEvent,
 	config: FunctionConfiguration,
+	signals: SignalContainer<FunctionNetworkingEvents>,
 ) {
 	const method: { [k in keyof ClientMethod]: ClientMethod[k] } = {
 		invoke(...args: unknown[]) {
@@ -135,7 +143,10 @@ function createClientMethod(
 							if (config.warnOnInvalidGuards) {
 								warn(`Server returned invalid value from event '${name}':`, value);
 							}
-							fireNetworkHandler("onBadResponse", Players.LocalPlayer, networkInfo);
+							signals.fire("onBadResponse", Players.LocalPlayer, {
+								networkInfo,
+								value,
+							});
 							return reject(NetworkingFunctionError.InvalidResult);
 						}
 

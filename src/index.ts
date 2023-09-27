@@ -1,7 +1,6 @@
 import { EventConfiguration, GlobalEvent } from "./events/types";
 import { FunctionConfiguration, GlobalFunction } from "./functions/types";
 import { Skip as NetworkingSkip } from "./middleware/skip";
-import { registerNetworkHandler as registerHandler } from "./handlers";
 import { NetworkingFunctionError } from "./functions/errors";
 import {
 	EventMiddlewareList,
@@ -33,11 +32,6 @@ export namespace Networking {
 		clientMiddleware?: FunctionMiddlewareList<C>,
 		configOptions?: Partial<FunctionConfiguration>,
 	): GlobalFunction<S, C>;
-
-	/**
-	 * Connects to a global network event.
-	 */
-	export const registerNetworkHandler = registerHandler;
 
 	/**
 	 * Stops networking function middleware.

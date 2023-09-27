@@ -1,5 +1,6 @@
 import { t } from "@rbxts/t";
 import { FunctionParameters, NetworkingObfuscationMarker, StripTSDoc } from "../types";
+import { EventNetworkingEvents } from "../handlers";
 
 export interface ServerSender<I extends unknown[]> {
 	(player: Player | Player[], ...args: I): void;
@@ -71,8 +72,25 @@ export type ClientHandler<E, R> = NetworkingObfuscationMarker &
 	{ [k in keyof StripTSDoc<R>]: ClientReceiver<FunctionParameters<R[k]>> };
 
 export interface GlobalEvent<S, C> {
+	/**
+	 * This is the server implementation of the network and does not exist on the client.
+	 */
 	server: ServerHandler<C, S>;
+
+	/**
+	 * This is the client implementation of the network and does not exist on the server.
+	 */
 	client: ClientHandler<S, C>;
+
+	/**
+	 * Registers a networking event handler.
+	 * @param key The name of the event
+	 * @param callback The handler you wish to attach
+	 */
+	registerHandler<K extends keyof EventNetworkingEvents>(
+		key: K,
+		callback: EventNetworkingEvents[K],
+	): RBXScriptConnection;
 }
 
 export interface EventConfiguration {
