@@ -6,6 +6,8 @@ import { populateInstanceMap } from "../util/populateInstanceMap";
 import { createClientHandler } from "./createClientHandler";
 import { createServerHandler } from "./createServerHandler";
 import { ArbitaryGuards, FunctionConfiguration, GlobalFunction } from "./types";
+import { createSignalContainer } from "../util/createSignalContainer";
+import { FunctionNetworkingEvents } from "../handlers";
 
 function getDefaultConfiguration(config: Partial<FunctionConfiguration>) {
 	return identity<FunctionConfiguration>({
@@ -29,6 +31,7 @@ export function createNetworkingFunction<S, C>(
 	const networkInfos = new Map<string, NetworkInfo>();
 	const serverRemotes = new Map<string, RemoteEvent>();
 	const clientRemotes = new Map<string, RemoteEvent>();
+	const signals = createSignalContainer<FunctionNetworkingEvents>();
 
 	const serverNames = Object.keys(serverEvents).map((x) => `s:${x}`);
 	const clientNames = Object.keys(clientEvents).map((x) => `c:${x}`);
@@ -63,9 +66,13 @@ export function createNetworkingFunction<S, C>(
 				serverEvents,
 				clientEvents,
 				config,
+				signals,
 				serverMiddleware,
 			),
 			client: undefined!,
+			registerHandler(key, callback) {
+				return signals.connect(key, callback);
+			},
 		};
 	} else {
 		return {
@@ -77,8 +84,12 @@ export function createNetworkingFunction<S, C>(
 				serverEvents,
 				clientEvents,
 				config,
+				signals,
 				clientMiddleware,
 			),
+			registerHandler(key, callback) {
+				return signals.connect(key, callback);
+			},
 		};
 	}
 }

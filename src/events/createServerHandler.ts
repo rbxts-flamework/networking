@@ -1,9 +1,10 @@
 import { Players } from "@rbxts/services";
-import { fireNetworkHandler } from "../handlers";
+import { EventNetworkingEvents } from "../handlers";
 import { createMiddlewareProcessor } from "../middleware/createMiddlewareProcessor";
 import { EventMiddlewareList, Middleware } from "../middleware/types";
 import { NetworkInfo } from "../types";
 import { ArbitaryGuards, EventConfiguration, ServerHandler, ServerReceiver, ServerSender } from "./types";
+import { SignalContainer } from "../util/createSignalContainer";
 
 export function createServerHandler<S, C>(
 	remotes: Map<string, RemoteEvent>,
@@ -11,6 +12,7 @@ export function createServerHandler<S, C>(
 	serverEvents: ArbitaryGuards,
 	clientEvents: ArbitaryGuards,
 	config: EventConfiguration,
+	signalContainer: SignalContainer<EventNetworkingEvents>,
 	middlewareFactoryList?: EventMiddlewareList<S>,
 ): ServerHandler<C, S> {
 	const handler = {} as ServerHandler<C, S>;
@@ -45,7 +47,11 @@ export function createServerHandler<S, C>(
 						if (config.warnOnInvalidGuards) {
 							warn(`'${player}' sent invalid arguments for event '${name}' (arg #${i}):`, args[i]);
 						}
-						fireNetworkHandler("onBadRequest", player, networkInfo, i);
+						signalContainer.fire("onBadRequest", player, {
+							event: networkInfo,
+							argIndex: i,
+							argValue: args[i],
+						});
 						return;
 					}
 				}
