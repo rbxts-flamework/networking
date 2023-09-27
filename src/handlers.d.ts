@@ -7,7 +7,7 @@ interface BaseEvent {
 	/**
 	 * The event or function that was fired.
 	 */
-	event: NetworkInfo;
+	networkInfo: NetworkInfo;
 }
 
 interface BadRequestData extends BaseEvent {

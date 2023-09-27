@@ -87,7 +87,7 @@ export function createClientHandler<S, C>(
 							warn(`Server sent invalid argument for event '${name}' (arg #${i}):`, args[i]);
 						}
 						signals.fire("onBadRequest", Players.LocalPlayer, {
-							event: networkInfo,
+							networkInfo,
 							argIndex: i,
 							argValue: args[i],
 						});
@@ -144,7 +144,7 @@ function createClientMethod(
 								warn(`Server returned invalid value from event '${name}':`, value);
 							}
 							signals.fire("onBadResponse", Players.LocalPlayer, {
-								event: networkInfo,
+								networkInfo,
 								value,
 							});
 							return reject(NetworkingFunctionError.InvalidResult);

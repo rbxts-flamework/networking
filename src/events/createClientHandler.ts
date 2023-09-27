@@ -48,7 +48,7 @@ export function createClientHandler<S, C>(
 							warn(`Server sent invalid argument for event '${name}' (arg #${i}):`, args[i]);
 						}
 						signals.fire("onBadRequest", Players.LocalPlayer, {
-							event: networkInfo,
+							networkInfo,
 							argIndex: i,
 							argValue: args[i],
 						});

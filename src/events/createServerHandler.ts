@@ -48,7 +48,7 @@ export function createServerHandler<S, C>(
 							warn(`'${player}' sent invalid arguments for event '${name}' (arg #${i}):`, args[i]);
 						}
 						signalContainer.fire("onBadRequest", player, {
-							event: networkInfo,
+							networkInfo,
 							argIndex: i,
 							argValue: args[i],
 						});
