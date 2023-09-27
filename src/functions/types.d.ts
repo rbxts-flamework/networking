@@ -73,7 +73,14 @@ export type ClientHandler<E, R> = NetworkingObfuscationMarker &
 	{ [k in keyof StripTSDoc<R>]: ClientReceiver<FunctionParameters<R[k]>, FunctionReturn<R[k]>> };
 
 export interface GlobalFunction<S, C> {
+	/**
+	 * This is the server implementation of the network and does not exist on the client.
+	 */
 	server: ServerHandler<C, S>;
+
+	/**
+	 * This is the client implementation of the network and does not exist on the server.
+	 */
 	client: ClientHandler<S, C>;
 
 	/**
