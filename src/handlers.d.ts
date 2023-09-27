@@ -1,8 +1,6 @@
 import Signal from "@rbxts/signal";
 import { NetworkInfo } from "./types";
 
-type SignalCallback<T> = T extends Signal<infer C> ? C : never;
-
 interface BaseEvent {
 	/**
 	 * The event or function that was fired.
