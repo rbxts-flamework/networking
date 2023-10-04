@@ -2,6 +2,7 @@ import { t } from "@rbxts/t";
 import { NetworkingFunctionError } from "../functions/errors";
 import { FunctionParameters, FunctionReturn, NetworkingObfuscationMarker, StripTSDoc } from "../types";
 import { FunctionNetworkingEvents } from "../handlers";
+import { FunctionMiddlewareList } from "../middleware/types";
 
 export interface ServerSender<I extends unknown[], O> {
 	(player: Player, ...args: I): Promise<O>;
@@ -72,16 +73,41 @@ export type ClientHandler<E, R> = NetworkingObfuscationMarker &
 	{ [k in keyof E]: ClientSender<FunctionParameters<E[k]>, FunctionReturn<E[k]>> } &
 	{ [k in keyof StripTSDoc<R>]: ClientReceiver<FunctionParameters<R[k]>, FunctionReturn<R[k]>> };
 
+export interface FunctionCreateConfiguration<T> {
+	/**
+	 * Disables input validation, allowing any value to pass.
+	 * Defaults to `false`
+	 */
+	disableIncomingGuards: boolean;
+
+	/**
+	 * Emit a warning whenever a guard fails.
+	 * Defaults to `RunService.IsStudio()`
+	 */
+	warnOnInvalidGuards: boolean;
+
+	/**
+	 * The default timeout for outgoing requests.
+	 * Defaults to `10`
+	 */
+	defaultTimeout: number;
+
+	/**
+	 * The middleware for each event.
+	 */
+	middleware: FunctionMiddlewareList<T>;
+}
+
 export interface GlobalFunction<S, C> {
 	/**
 	 * This is the server implementation of the network and does not exist on the client.
 	 */
-	server: ServerHandler<C, S>;
+	createServer(config: Partial<FunctionCreateConfiguration<S>>): ServerHandler<C, S>;
 
 	/**
 	 * This is the client implementation of the network and does not exist on the server.
 	 */
-	client: ClientHandler<S, C>;
+	createClient(config: Partial<FunctionCreateConfiguration<C>>): ClientHandler<S, C>;
 
 	/**
 	 * Registers a networking event handler.

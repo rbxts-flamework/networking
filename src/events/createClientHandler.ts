@@ -1,26 +1,24 @@
 import { Players } from "@rbxts/services";
 import { EventNetworkingEvents } from "../handlers";
 import { createMiddlewareProcessor } from "../middleware/createMiddlewareProcessor";
-import { EventMiddlewareList, Middleware } from "../middleware/types";
+import { Middleware } from "../middleware/types";
 import { NetworkInfo } from "../types";
-import { ArbitaryGuards, ClientHandler, ClientReceiver, ClientSender, EventConfiguration } from "./types";
+import { ArbitaryGuards, ClientHandler, ClientReceiver, ClientSender, EventCreateConfiguration } from "./types";
 import { SignalContainer } from "../util/createSignalContainer";
 
 export function createClientHandler<S, C>(
 	remotes: Map<string, RemoteEvent>,
 	networkInfos: Map<string, NetworkInfo>,
-	serverEvents: ArbitaryGuards,
-	clientEvents: ArbitaryGuards,
-	config: EventConfiguration,
+	eventGuards: ArbitaryGuards,
+	config: EventCreateConfiguration<C>,
 	signals: SignalContainer<EventNetworkingEvents>,
-	middlewareFactoryList?: EventMiddlewareList<C>,
 ): ClientHandler<S, C> {
 	const handler = {} as ClientHandler<S, C>;
 	const bindables = new Map<string, BindableEvent>();
 	const processors = new Map<string, Middleware<unknown[], unknown>>();
 	const isSetup = new Set<string>();
 
-	for (const [name] of pairs(clientEvents)) {
+	for (const [name] of pairs(eventGuards)) {
 		const bindable = new Instance("BindableEvent");
 		bindables.set(name as string, bindable);
 	}
@@ -34,10 +32,10 @@ export function createClientHandler<S, C>(
 		const middlewareProcessor = processors.get(name)!;
 
 		remote.OnClientEvent.Connect((...args: unknown[]) => {
-			const guards = clientEvents[name];
+			const guards = eventGuards[name];
 			if (!guards) return;
 
-			if (!config.disableClientGuards) {
+			if (!config.disableIncomingGuards) {
 				const paramGuards = guards[0];
 				const restGuard = guards[1];
 
@@ -64,7 +62,7 @@ export function createClientHandler<S, C>(
 	for (const [name, remote] of remotes) {
 		const networkInfo = networkInfos.get(name)!;
 		const middlewareProcessor = createMiddlewareProcessor(
-			middlewareFactoryList?.[name as never],
+			config.middleware?.[name as never],
 			networkInfo,
 			(_, ...args) => bindables.get(name)?.Fire(...args),
 		);
@@ -73,7 +71,7 @@ export function createClientHandler<S, C>(
 		handler[name as keyof S] = createClientMethod(
 			() => setupRemote(name),
 			remote,
-			clientEvents[name]?.size() ?? 0,
+			eventGuards[name]?.size() ?? 0,
 			bindables.get(name),
 			middlewareProcessor,
 		) as never;

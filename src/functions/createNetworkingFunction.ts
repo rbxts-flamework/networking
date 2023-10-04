@@ -5,17 +5,23 @@ import { NetworkInfo } from "../types";
 import { populateInstanceMap } from "../util/populateInstanceMap";
 import { createClientHandler } from "./createClientHandler";
 import { createServerHandler } from "./createServerHandler";
-import { ArbitaryGuards, FunctionConfiguration, GlobalFunction } from "./types";
+import {
+	ArbitaryGuards,
+	ClientHandler,
+	FunctionConfiguration,
+	FunctionCreateConfiguration,
+	GlobalFunction,
+	ServerHandler,
+} from "./types";
 import { createSignalContainer } from "../util/createSignalContainer";
 import { FunctionNetworkingEvents } from "../handlers";
 
-function getDefaultConfiguration(config: Partial<FunctionConfiguration>) {
-	return identity<FunctionConfiguration>({
-		disableClientGuards: config.disableClientGuards ?? false,
-		disableServerGuards: config.disableServerGuards ?? false,
-		defaultClientTimeout: config.defaultClientTimeout ?? 30,
-		defaultServerTimeout: config.defaultServerTimeout ?? 10,
+function getDefaultConfiguration<T>(config: Partial<FunctionCreateConfiguration<T>>) {
+	return identity<FunctionCreateConfiguration<T>>({
+		middleware: config.middleware ?? {},
+		defaultTimeout: config.defaultTimeout ?? (RunService.IsClient() ? 30 : 10),
 		warnOnInvalidGuards: config.warnOnInvalidGuards ?? RunService.IsStudio(),
+		disableIncomingGuards: config.disableIncomingGuards ?? false,
 	});
 }
 
@@ -23,11 +29,7 @@ export function createNetworkingFunction<S, C>(
 	globalName: string,
 	serverEvents: ArbitaryGuards,
 	clientEvents: ArbitaryGuards,
-	serverMiddleware?: FunctionMiddlewareList<S>,
-	clientMiddleware?: FunctionMiddlewareList<C>,
-	partialConfig: Partial<FunctionConfiguration> = {},
 ): GlobalFunction<S, C> {
-	const config = getDefaultConfiguration(partialConfig);
 	const networkInfos = new Map<string, NetworkInfo>();
 	const serverRemotes = new Map<string, RemoteEvent>();
 	const clientRemotes = new Map<string, RemoteEvent>();
@@ -36,60 +38,69 @@ export function createNetworkingFunction<S, C>(
 	const serverNames = Object.keys(serverEvents).map((x) => `s:${x}`);
 	const clientNames = Object.keys(clientEvents).map((x) => `c:${x}`);
 
-	populateInstanceMap("RemoteEvent", `functions-${globalName}`, serverNames, serverRemotes);
-	populateInstanceMap("RemoteEvent", `functions-${globalName}`, clientNames, clientRemotes);
+	const setupRemotes = () => {
+		populateInstanceMap("RemoteEvent", `functions-${globalName}`, serverNames, serverRemotes);
+		populateInstanceMap("RemoteEvent", `functions-${globalName}`, clientNames, clientRemotes);
 
-	for (const [alias] of serverRemotes) {
-		const name = alias.sub(3);
-		networkInfos.set(name, {
-			eventType: "Function",
-			globalName,
-			name,
-		});
-	}
+		for (const [alias] of serverRemotes) {
+			const name = alias.sub(3);
+			networkInfos.set(name, {
+				eventType: "Function",
+				globalName,
+				name,
+			});
+		}
 
-	for (const [alias] of clientRemotes) {
-		const name = alias.sub(3);
-		networkInfos.set(name, {
-			eventType: "Function",
-			globalName,
-			name,
-		});
-	}
+		for (const [alias] of clientRemotes) {
+			const name = alias.sub(3);
+			networkInfos.set(name, {
+				eventType: "Function",
+				globalName,
+				name,
+			});
+		}
+	};
 
-	if (RunService.IsServer()) {
-		return {
-			server: createServerHandler(
+	let server: ServerHandler<C, S> | undefined;
+	let client: ClientHandler<S, C> | undefined;
+
+	return {
+		createServer(config) {
+			if (!RunService.IsServer()) {
+				return undefined!;
+			}
+
+			setupRemotes();
+			return (server ??= createServerHandler<S, C>(
 				serverRemotes,
 				clientRemotes,
 				networkInfos,
 				serverEvents,
 				clientEvents,
-				config,
+				getDefaultConfiguration(config),
 				signals,
-				serverMiddleware,
-			),
-			client: undefined!,
-			registerHandler(key, callback) {
-				return signals.connect(key, callback);
-			},
-		};
-	} else {
-		return {
-			server: undefined!,
-			client: createClientHandler(
+			));
+		},
+
+		createClient(config) {
+			if (!RunService.IsClient()) {
+				return undefined!;
+			}
+
+			setupRemotes();
+			return (client ??= createClientHandler<S, C>(
 				serverRemotes,
 				clientRemotes,
 				networkInfos,
 				serverEvents,
 				clientEvents,
-				config,
+				getDefaultConfiguration(config),
 				signals,
-				clientMiddleware,
-			),
-			registerHandler(key, callback) {
-				return signals.connect(key, callback);
-			},
-		};
-	}
+			));
+		},
+
+		registerHandler(key, callback) {
+			return signals.connect(key, callback);
+		},
+	};
 }

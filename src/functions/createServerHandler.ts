@@ -9,6 +9,7 @@ import { FunctionNetworkingEvents } from "../handlers";
 import {
 	ArbitaryGuards,
 	FunctionConfiguration,
+	FunctionCreateConfiguration,
 	RequestInfo,
 	ServerHandler,
 	ServerReceiver,
@@ -22,9 +23,8 @@ export function createServerHandler<S, C>(
 	networkInfos: Map<string, NetworkInfo>,
 	serverEvents: ArbitaryGuards,
 	clientEvents: ArbitaryGuards,
-	config: FunctionConfiguration,
+	config: FunctionCreateConfiguration<S>,
 	signals: SignalContainer<FunctionNetworkingEvents>,
-	middlewareFactoryList?: FunctionMiddlewareList<S>,
 ): ServerHandler<C, S> {
 	const handler = {} as ServerHandler<C, S>;
 	const processors = new Map<string, MiddlewareProcessor<unknown[], unknown>>();
@@ -34,7 +34,7 @@ export function createServerHandler<S, C>(
 		if (handler[name as keyof C] !== undefined) return;
 		handler[name as keyof C] = createServerMethod(
 			(serverEvents[name] ?? clientEvents[name])[1],
-			middlewareFactoryList?.[name as never] ?? [],
+			config.middleware?.[name as never] ?? [],
 			processors,
 			networkInfo,
 			players,
@@ -74,7 +74,7 @@ export function createServerHandler<S, C>(
 			const guards = serverEvents[name];
 			if (!guards) return;
 
-			if (!config.disableServerGuards) {
+			if (!config.disableIncomingGuards) {
 				const paramGuards = guards[0][0];
 				const restGuard = guards[0][1];
 
@@ -126,12 +126,12 @@ function createServerMethod(
 	players: Map<Player, RequestInfo>,
 	name: string,
 	remote: RemoteEvent,
-	config: FunctionConfiguration,
+	config: FunctionCreateConfiguration<unknown>,
 	signals: SignalContainer<FunctionNetworkingEvents>,
 ) {
 	const method: { [k in keyof ServerMethod]: ServerMethod[k] } = {
 		invoke(player: Player, ...args: unknown[]) {
-			return this.invokeWithTimeout(player, config.defaultServerTimeout, ...args);
+			return this.invokeWithTimeout(player, config.defaultTimeout, ...args);
 		},
 
 		invokeWithTimeout(player: Player, timeout: number, ...args: unknown[]) {
@@ -142,7 +142,7 @@ function createServerMethod(
 					const id = requestInfo.nextId++;
 					requestInfo.requests.set(id, (value, rejection) => {
 						if (rejection) return reject(rejection);
-						if (!config.disableServerGuards && !guard(value)) {
+						if (!config.disableIncomingGuards && !guard(value)) {
 							if (config.warnOnInvalidGuards) {
 								warn(`'${player}' returned invalid value from event '${name}':`, value);
 							}

@@ -12,6 +12,7 @@ import {
 	ClientReceiver,
 	ClientSender,
 	FunctionConfiguration,
+	FunctionCreateConfiguration,
 	RequestInfo,
 } from "./types";
 import { SignalContainer } from "../util/createSignalContainer";
@@ -23,9 +24,8 @@ export function createClientHandler<S, C>(
 	networkInfos: Map<string, NetworkInfo>,
 	serverEvents: ArbitaryGuards,
 	clientEvents: ArbitaryGuards,
-	config: FunctionConfiguration,
+	config: FunctionCreateConfiguration<C>,
 	signals: SignalContainer<FunctionNetworkingEvents>,
-	middlewareFactoryList?: FunctionMiddlewareList<C>,
 ): ClientHandler<S, C> {
 	const handler = {} as ClientHandler<S, C>;
 	const processors = new Map<string, MiddlewareProcessor<unknown[], unknown>>();
@@ -38,7 +38,7 @@ export function createClientHandler<S, C>(
 		if (handler[name as keyof S] !== undefined) return;
 		handler[name as keyof S] = createClientMethod(
 			(serverEvents[name] ?? clientEvents[name])[1],
-			middlewareFactoryList?.[name as never] ?? [],
+			config.middleware?.[name as never] ?? [],
 			processors,
 			networkInfo,
 			requestInfo,
@@ -76,7 +76,7 @@ export function createClientHandler<S, C>(
 			const guards = clientEvents[name];
 			if (!guards) return;
 
-			if (!config.disableClientGuards) {
+			if (!config.disableIncomingGuards) {
 				const paramGuards = guards[0][0];
 				const restGuard = guards[0][1];
 
@@ -124,12 +124,12 @@ function createClientMethod(
 	requestInfo: RequestInfo,
 	name: string,
 	remote: RemoteEvent,
-	config: FunctionConfiguration,
+	config: FunctionCreateConfiguration<unknown>,
 	signals: SignalContainer<FunctionNetworkingEvents>,
 ) {
 	const method: { [k in keyof ClientMethod]: ClientMethod[k] } = {
 		invoke(...args: unknown[]) {
-			return this.invokeWithTimeout(config.defaultClientTimeout, ...args);
+			return this.invokeWithTimeout(config.defaultTimeout, ...args);
 		},
 
 		invokeWithTimeout(timeout: number, ...args: unknown[]) {
@@ -139,7 +139,7 @@ function createClientMethod(
 					const id = requestInfo.nextId++;
 					requestInfo.requests.set(id, (value, rejection) => {
 						if (rejection) return reject(rejection);
-						if (!config.disableClientGuards && !guard(value)) {
+						if (!config.disableIncomingGuards && !guard(value)) {
 							if (config.warnOnInvalidGuards) {
 								warn(`Server returned invalid value from event '${name}':`, value);
 							}

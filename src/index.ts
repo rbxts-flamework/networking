@@ -1,10 +1,8 @@
-import { EventConfiguration, GlobalEvent } from "./events/types";
-import { FunctionConfiguration, GlobalFunction } from "./functions/types";
+import { GlobalEvent } from "./events/types";
+import { GlobalFunction } from "./functions/types";
 import { Skip as NetworkingSkip } from "./middleware/skip";
 import { NetworkingFunctionError } from "./functions/errors";
 import {
-	EventMiddlewareList,
-	FunctionMiddlewareList,
 	MiddlewareFactory as _MiddlewareFactory,
 	EventMiddleware as _EventMiddleware,
 	FunctionMiddleware as _FunctionMiddleware,
@@ -16,22 +14,14 @@ export namespace Networking {
 	 * @param serverMiddleware Middleware for server events
 	 * @param clientMiddleware Middleware for client events
 	 */
-	export declare function createEvent<S, C>(
-		serverMiddleware?: EventMiddlewareList<S>,
-		clientMiddleware?: EventMiddlewareList<C>,
-		configOptions?: Partial<EventConfiguration>,
-	): GlobalEvent<S, C>;
+	export declare function createEvent<S, C>(): GlobalEvent<S, C>;
 
 	/**
 	 * Creates a new function event based off the supplied types.
 	 * @param serverMiddleware Middleware for server events
 	 * @param clientMiddleware Middleware for client events
 	 */
-	export declare function createFunction<S, C>(
-		serverMiddleware?: FunctionMiddlewareList<S>,
-		clientMiddleware?: FunctionMiddlewareList<C>,
-		configOptions?: Partial<FunctionConfiguration>,
-	): GlobalFunction<S, C>;
+	export declare function createFunction<S, C>(): GlobalFunction<S, C>;
 
 	/**
 	 * Stops networking function middleware.

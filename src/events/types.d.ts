@@ -1,6 +1,7 @@
 import { t } from "@rbxts/t";
 import { FunctionParameters, NetworkingObfuscationMarker, StripTSDoc } from "../types";
 import { EventNetworkingEvents } from "../handlers";
+import { EventMiddlewareList } from "../middleware/types";
 
 export interface ServerSender<I extends unknown[]> {
 	(player: Player | Player[], ...args: I): void;
@@ -71,16 +72,35 @@ export type ClientHandler<E, R> = NetworkingObfuscationMarker &
 	{ [k in keyof E]: ClientSender<FunctionParameters<E[k]>> } &
 	{ [k in keyof StripTSDoc<R>]: ClientReceiver<FunctionParameters<R[k]>> };
 
+export interface EventCreateConfiguration<T> {
+	/**
+	 * Disables input validation, allowing any value to pass.
+	 * Defaults to `false`
+	 */
+	disableIncomingGuards: boolean;
+
+	/**
+	 * Emit a warning whenever a guard fails.
+	 * Defaults to `RunService.IsStudio()`
+	 */
+	warnOnInvalidGuards: boolean;
+
+	/**
+	 * The middleware for each event.
+	 */
+	middleware: EventMiddlewareList<T>;
+}
+
 export interface GlobalEvent<S, C> {
 	/**
 	 * This is the server implementation of the network and does not exist on the client.
 	 */
-	server: ServerHandler<C, S>;
+	createServer(config: Partial<EventCreateConfiguration<S>>): ServerHandler<C, S>;
 
 	/**
 	 * This is the client implementation of the network and does not exist on the server.
 	 */
-	client: ClientHandler<S, C>;
+	createClient(config: Partial<EventCreateConfiguration<C>>): ClientHandler<S, C>;
 
 	/**
 	 * Registers a networking event handler.
@@ -91,26 +111,6 @@ export interface GlobalEvent<S, C> {
 		key: K,
 		callback: EventNetworkingEvents[K],
 	): RBXScriptConnection;
-}
-
-export interface EventConfiguration {
-	/**
-	 * Disables input validation on the server, allowing any value to pass.
-	 * Defaults to `false`
-	 */
-	disableServerGuards: boolean;
-
-	/**
-	 * Disables input validation on the client, allowing any value to pass.
-	 * Defaults to `false`
-	 */
-	disableClientGuards: boolean;
-
-	/**
-	 * Emit a warning whenever a guard fails.
-	 * Defaults to `RunService.IsStudio()`
-	 */
-	warnOnInvalidGuards: boolean;
 }
 
 export type ArbitaryGuards = { [key: string]: [t.check<unknown>[], t.check<unknown> | undefined] };
