@@ -1,7 +1,7 @@
 import { t } from "@rbxts/t";
 import {
 	FunctionParameters,
-	IntrinsicCallbackGuards,
+	IntrinsicTupleGuards,
 	IntrinsicObfuscate,
 	NetworkingObfuscationMarker,
 	StripTSDoc,
@@ -123,6 +123,6 @@ export interface GlobalEvent<S, C> {
 	): RBXScriptConnection;
 }
 
-export type EventMetadata<T> = IntrinsicObfuscate<{ [k in keyof T]: IntrinsicCallbackGuards<T[k]> }>;
+export type EventMetadata<T> = IntrinsicObfuscate<{ [k in keyof T]: IntrinsicTupleGuards<Parameters<T[k]>> }>;
 
 export type ArbitaryGuards = { [key: string]: [t.check<unknown>[], t.check<unknown> | undefined] };

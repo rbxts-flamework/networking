@@ -43,7 +43,7 @@ export type ObfuscateNames<T> = Modding.Many<(T extends T ? Modding.Obfuscate<T 
 export type IntrinsicObfuscate<T> = Modding.Intrinsic<"obfuscate-obj", [T, "remotes"], Record<string, T[keyof T]>>;
 
 /** @hidden Intrinsic feature not intended for users */
-export type IntrinsicCallbackGuards<T> = Modding.Intrinsic<"callback-guards", [T], GuardType>;
+export type IntrinsicTupleGuards<T> = Modding.Intrinsic<"tuple-guards", [T], GuardType>;
 
 /** @hidden Intrinsic feature not intended for users */
 export type IntrinsicGuard<T> = Modding.Intrinsic<"guard", [T], t.check<T>>;

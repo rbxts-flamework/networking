@@ -3,7 +3,7 @@ import { NetworkingFunctionError } from "../functions/errors";
 import {
 	FunctionParameters,
 	FunctionReturn,
-	IntrinsicCallbackGuards,
+	IntrinsicTupleGuards,
 	IntrinsicGuard,
 	IntrinsicObfuscate,
 	NetworkingObfuscationMarker,
@@ -174,7 +174,7 @@ export interface RequestInfo {
  * We must generate the return type of events separately as Flamework no longer includes all type guards on both server and client.
  */
 export type FunctionMetadata<T, R> = Modding.Many<{
-	incoming: IntrinsicObfuscate<{ [k in keyof T]: IntrinsicCallbackGuards<T[k]> }>;
+	incoming: IntrinsicObfuscate<{ [k in keyof T]: IntrinsicTupleGuards<Parameters<T[k]>> }>;
 	returns: IntrinsicObfuscate<{ [k in keyof R]: IntrinsicGuard<ReturnType<R[k]>> }>;
 }>;
 
