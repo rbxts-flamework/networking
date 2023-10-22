@@ -34,12 +34,8 @@ export interface ServerReceiver<I extends unknown[]> {
 	/**
 	 * Connect to this networking event.
 	 * @param callback The callback that will be fired
-	 * @param guards A list of guards that will only be used on this connection
 	 */
-	connect<F extends I>(
-		cb: (player: Player, ...args: F) => void,
-		guards?: { [k in keyof F]?: t.check<F[k]> },
-	): RBXScriptConnection;
+	connect(cb: (player: Player, ...args: I) => void): RBXScriptConnection;
 
 	/**
 	 * Fires a server event using player as the sender.
@@ -60,9 +56,8 @@ export interface ClientReceiver<I extends unknown[]> {
 	/**
 	 * Connect to this networking event.
 	 * @param callback The callback that will be fired
-	 * @param guards A list of guards that will only be used on this connection
 	 */
-	connect<F extends I>(cb: (...args: F) => void, guards?: { [k in keyof F]?: t.check<F[k]> }): RBXScriptConnection;
+	connect(cb: (...args: I) => void): RBXScriptConnection;
 
 	/**
 	 * Fires a client event.

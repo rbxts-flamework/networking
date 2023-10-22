@@ -113,21 +113,11 @@ function createServerMethod(
 			}
 		},
 
-		connect(callback, customGuards) {
+		connect(callback) {
 			assert(bindable, `Event ${remote.Name} is not registered as a receiver.`);
 			task.defer(connect);
 
-			return bindable.Event.Connect((player: Player, ...args: unknown[]) => {
-				if (customGuards) {
-					for (let i = 0; i < paramCount; i++) {
-						const guard = customGuards[i];
-						if (guard !== undefined && !guard(args[i])) {
-							return;
-						}
-					}
-				}
-				return callback(player, ...(args as never));
-			});
+			return bindable.Event.Connect(callback);
 		},
 
 		predict(player, ...args) {
