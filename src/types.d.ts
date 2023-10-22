@@ -24,7 +24,7 @@ export interface NetworkingObfuscationMarker {
 	 * @hidden
 	 * @deprecated
 	 */
-	readonly _nominal_NetworkingObfuscationMarker: unique symbol;
+	readonly _flamework_key_obfuscation: "remotes";
 }
 
 export type FunctionParameters<T> = T extends (...args: infer P) => unknown ? P : never;
