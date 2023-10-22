@@ -101,11 +101,15 @@ export interface FunctionCreateConfiguration<T> {
 export interface GlobalFunction<S, C> {
 	/**
 	 * This is the server implementation of the network and does not exist on the client.
+	 *
+	 * @metadata macro {@link config intrinsic-const} {@link config intrinsic-middleware}
 	 */
 	createServer(config: Partial<FunctionCreateConfiguration<S>>): ServerHandler<C, S>;
 
 	/**
 	 * This is the client implementation of the network and does not exist on the server.
+	 *
+	 * @metadata macro {@link config intrinsic-const} {@link config intrinsic-middleware}
 	 */
 	createClient(config: Partial<FunctionCreateConfiguration<C>>): ClientHandler<S, C>;
 

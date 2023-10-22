@@ -94,11 +94,15 @@ export interface EventCreateConfiguration<T> {
 export interface GlobalEvent<S, C> {
 	/**
 	 * This is the server implementation of the network and does not exist on the client.
+	 *
+	 * @metadata macro {@link config intrinsic-const} {@link config intrinsic-middleware}
 	 */
 	createServer(config: Partial<EventCreateConfiguration<S>>): ServerHandler<C, S>;
 
 	/**
 	 * This is the client implementation of the network and does not exist on the server.
+	 *
+	 * @metadata macro {@link config intrinsic-const} {@link config intrinsic-middleware}
 	 */
 	createClient(config: Partial<EventCreateConfiguration<C>>): ClientHandler<S, C>;
 
