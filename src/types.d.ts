@@ -1,3 +1,6 @@
+import { Modding } from "@flamework/core";
+import { t } from "@rbxts/t";
+
 export interface NetworkInfo {
 	/**
 	 * The name provided for this event.
@@ -33,3 +36,19 @@ export type FunctionReturn<T> = T extends (...args: never[]) => infer R ? R : ne
 export type StripTSDoc<T, E extends string | number | symbol = keyof T> = {
 	[k in E]: k extends keyof T ? T[k] : never;
 };
+
+export type ObfuscateNames<T> = Modding.Many<(T extends T ? Modding.Obfuscate<T & string, "remotes"> : never)[]>;
+
+/** @hidden Intrinsic feature not intended for users */
+export type IntrinsicObfuscate<T> = Modding.Intrinsic<"obfuscate-obj", [T, "remotes"], Record<string, T[keyof T]>>;
+
+/** @hidden Intrinsic feature not intended for users */
+export type IntrinsicCallbackGuards<T> = Modding.Intrinsic<"callback-guards", [T], GuardType>;
+
+/** @hidden Intrinsic feature not intended for users */
+export type IntrinsicGuard<T> = Modding.Intrinsic<"guard", [T], t.check<T>>;
+
+/** @hidden Intrinsic feature not intended for users */
+export type IntrinsicDeclaration = Modding.Intrinsic<"declaration-uid", [], string>;
+
+type GuardType = [t.check<unknown>[], t.check<unknown> | undefined];

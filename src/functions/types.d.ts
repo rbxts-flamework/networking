@@ -1,8 +1,17 @@
 import { t } from "@rbxts/t";
 import { NetworkingFunctionError } from "../functions/errors";
-import { FunctionParameters, FunctionReturn, NetworkingObfuscationMarker, StripTSDoc } from "../types";
+import {
+	FunctionParameters,
+	FunctionReturn,
+	IntrinsicCallbackGuards,
+	IntrinsicGuard,
+	IntrinsicObfuscate,
+	NetworkingObfuscationMarker,
+	StripTSDoc,
+} from "../types";
 import { FunctionNetworkingEvents } from "../handlers";
 import { FunctionMiddlewareList } from "../middleware/types";
+import { Modding } from "@flamework/core";
 
 export interface ServerSender<I extends unknown[], O> {
 	(player: Player, ...args: I): Promise<O>;
@@ -104,14 +113,14 @@ export interface GlobalFunction<S, C> {
 	 *
 	 * @metadata macro {@link config intrinsic-const} {@link config intrinsic-middleware}
 	 */
-	createServer(config: Partial<FunctionCreateConfiguration<S>>): ServerHandler<C, S>;
+	createServer(config: Partial<FunctionCreateConfiguration<S>>, meta?: FunctionMetadata<S, C>): ServerHandler<C, S>;
 
 	/**
 	 * This is the client implementation of the network and does not exist on the server.
 	 *
 	 * @metadata macro {@link config intrinsic-const} {@link config intrinsic-middleware}
 	 */
-	createClient(config: Partial<FunctionCreateConfiguration<C>>): ClientHandler<S, C>;
+	createClient(config: Partial<FunctionCreateConfiguration<C>>, meta?: FunctionMetadata<C, S>): ClientHandler<S, C>;
 
 	/**
 	 * Registers a networking event handler.
@@ -160,6 +169,14 @@ export interface RequestInfo {
 	nextId: number;
 	requests: Map<number, (value: unknown, rejection?: NetworkingFunctionError) => void>;
 }
+
+/**
+ * We must generate the return type of events separately as Flamework no longer includes all type guards on both server and client.
+ */
+export type FunctionMetadata<T, R> = Modding.Many<{
+	incoming: IntrinsicObfuscate<{ [k in keyof T]: IntrinsicCallbackGuards<T[k]> }>;
+	returns: IntrinsicObfuscate<{ [k in keyof R]: IntrinsicGuard<ReturnType<R[k]>> }>;
+}>;
 
 export type ArbitaryGuards = {
 	[key: string]: [parameters: [t.check<unknown>[], t.check<unknown> | undefined], result: t.check<unknown>];

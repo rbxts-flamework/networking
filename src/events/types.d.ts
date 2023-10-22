@@ -1,5 +1,11 @@
 import { t } from "@rbxts/t";
-import { FunctionParameters, NetworkingObfuscationMarker, StripTSDoc } from "../types";
+import {
+	FunctionParameters,
+	IntrinsicCallbackGuards,
+	IntrinsicObfuscate,
+	NetworkingObfuscationMarker,
+	StripTSDoc,
+} from "../types";
 import { EventNetworkingEvents } from "../handlers";
 import { EventMiddlewareList } from "../middleware/types";
 
@@ -97,14 +103,14 @@ export interface GlobalEvent<S, C> {
 	 *
 	 * @metadata macro {@link config intrinsic-const} {@link config intrinsic-middleware}
 	 */
-	createServer(config: Partial<EventCreateConfiguration<S>>): ServerHandler<C, S>;
+	createServer(config: Partial<EventCreateConfiguration<S>>, meta?: EventMetadata<S>): ServerHandler<C, S>;
 
 	/**
 	 * This is the client implementation of the network and does not exist on the server.
 	 *
 	 * @metadata macro {@link config intrinsic-const} {@link config intrinsic-middleware}
 	 */
-	createClient(config: Partial<EventCreateConfiguration<C>>): ClientHandler<S, C>;
+	createClient(config: Partial<EventCreateConfiguration<C>>, meta?: EventMetadata<C>): ClientHandler<S, C>;
 
 	/**
 	 * Registers a networking event handler.
@@ -116,5 +122,7 @@ export interface GlobalEvent<S, C> {
 		callback: EventNetworkingEvents[K],
 	): RBXScriptConnection;
 }
+
+export type EventMetadata<T> = IntrinsicObfuscate<{ [k in keyof T]: IntrinsicCallbackGuards<T[k]> }>;
 
 export type ArbitaryGuards = { [key: string]: [t.check<unknown>[], t.check<unknown> | undefined] };

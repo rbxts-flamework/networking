@@ -13,6 +13,7 @@ import {
 	ClientSender,
 	FunctionConfiguration,
 	FunctionCreateConfiguration,
+	FunctionMetadata,
 	RequestInfo,
 } from "./types";
 import { SignalContainer } from "../util/createSignalContainer";
@@ -22,8 +23,7 @@ export function createClientHandler<S, C>(
 	serverRemotes: Map<string, RemoteEvent>,
 	clientRemotes: Map<string, RemoteEvent>,
 	networkInfos: Map<string, NetworkInfo>,
-	serverEvents: ArbitaryGuards,
-	clientEvents: ArbitaryGuards,
+	functionGuards: FunctionMetadata<C, S>,
 	config: FunctionCreateConfiguration<C>,
 	signals: SignalContainer<FunctionNetworkingEvents>,
 ): ClientHandler<S, C> {
@@ -37,7 +37,7 @@ export function createClientHandler<S, C>(
 	function createMethod(name: string, networkInfo: NetworkInfo, remote: RemoteEvent) {
 		if (handler[name as keyof S] !== undefined) return;
 		handler[name as keyof S] = createClientMethod(
-			(serverEvents[name] ?? clientEvents[name])[1],
+			functionGuards.returns[name],
 			config.middleware?.[name as never] ?? [],
 			processors,
 			networkInfo,
@@ -73,12 +73,12 @@ export function createClientHandler<S, C>(
 		createMethod(name, networkInfo, remote);
 
 		remote.OnClientEvent.Connect((id, ...args: unknown[]) => {
-			const guards = clientEvents[name];
+			const guards = functionGuards.incoming[name];
 			if (!guards) return;
 
 			if (!config.disableIncomingGuards) {
-				const paramGuards = guards[0][0];
-				const restGuard = guards[0][1];
+				const paramGuards = guards[0];
+				const restGuard = guards[1];
 
 				for (let i = 0; i < math.max(paramGuards.size(), args.size()); i++) {
 					const guard = paramGuards[i] ?? restGuard;

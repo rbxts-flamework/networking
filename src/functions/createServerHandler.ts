@@ -10,6 +10,7 @@ import {
 	ArbitaryGuards,
 	FunctionConfiguration,
 	FunctionCreateConfiguration,
+	FunctionMetadata,
 	RequestInfo,
 	ServerHandler,
 	ServerReceiver,
@@ -21,8 +22,7 @@ export function createServerHandler<S, C>(
 	serverRemotes: Map<string, RemoteEvent>,
 	clientRemotes: Map<string, RemoteEvent>,
 	networkInfos: Map<string, NetworkInfo>,
-	serverEvents: ArbitaryGuards,
-	clientEvents: ArbitaryGuards,
+	functionGuards: FunctionMetadata<S, C>,
 	config: FunctionCreateConfiguration<S>,
 	signals: SignalContainer<FunctionNetworkingEvents>,
 ): ServerHandler<C, S> {
@@ -33,7 +33,7 @@ export function createServerHandler<S, C>(
 	function createMethod(name: string, networkInfo: NetworkInfo, remote: RemoteEvent) {
 		if (handler[name as keyof C] !== undefined) return;
 		handler[name as keyof C] = createServerMethod(
-			(serverEvents[name] ?? clientEvents[name])[1],
+			functionGuards.returns[name],
 			config.middleware?.[name as never] ?? [],
 			processors,
 			networkInfo,
@@ -71,12 +71,12 @@ export function createServerHandler<S, C>(
 		createMethod(name, networkInfo, remote);
 
 		remote.OnServerEvent.Connect((player, id, ...args) => {
-			const guards = serverEvents[name];
+			const guards = functionGuards.incoming[name];
 			if (!guards) return;
 
 			if (!config.disableIncomingGuards) {
-				const paramGuards = guards[0][0];
-				const restGuard = guards[0][1];
+				const paramGuards = guards[0];
+				const restGuard = guards[1];
 
 				for (let i = 0; i < math.max(paramGuards.size(), args.size()); i++) {
 					const guard = paramGuards[i] ?? restGuard;

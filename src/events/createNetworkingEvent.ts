@@ -18,16 +18,16 @@ function getDefaultConfiguration<T>(config: Partial<EventCreateConfiguration<T>>
 
 export function createNetworkingEvent<S, C>(
 	globalName: string,
-	serverEvents: ArbitaryGuards,
-	clientEvents: ArbitaryGuards,
+	serverNames: string[],
+	clientNames: string[],
 ): GlobalEvent<S, C> {
 	const networkInfos = new Map<string, NetworkInfo>();
 	const remotes = new Map<string, RemoteEvent>();
 	const signals = createSignalContainer<EventNetworkingEvents>();
 
 	const setupRemotes = () => {
-		populateInstanceMap("RemoteEvent", `events-${globalName}`, Object.keys(serverEvents) as string[], remotes);
-		populateInstanceMap("RemoteEvent", `events-${globalName}`, Object.keys(clientEvents) as string[], remotes);
+		populateInstanceMap("RemoteEvent", `events-${globalName}`, serverNames, remotes);
+		populateInstanceMap("RemoteEvent", `events-${globalName}`, clientNames, remotes);
 
 		for (const [name] of remotes) {
 			networkInfos.set(name, {
@@ -42,7 +42,7 @@ export function createNetworkingEvent<S, C>(
 	let client: ClientHandler<S, C> | undefined;
 
 	return {
-		createServer(config) {
+		createServer(config, meta) {
 			if (!RunService.IsServer()) {
 				return undefined!;
 			}
@@ -51,13 +51,13 @@ export function createNetworkingEvent<S, C>(
 			return (server ??= createServerHandler<S, C>(
 				remotes,
 				networkInfos,
-				serverEvents,
+				meta!,
 				getDefaultConfiguration(config),
 				signals,
 			));
 		},
 
-		createClient(config) {
+		createClient(config, meta) {
 			if (!RunService.IsClient()) {
 				return undefined!;
 			}
@@ -66,7 +66,7 @@ export function createNetworkingEvent<S, C>(
 			return (client ??= createClientHandler<S, C>(
 				remotes,
 				networkInfos,
-				clientEvents,
+				meta!,
 				getDefaultConfiguration(config),
 				signals,
 			));

@@ -7,21 +7,38 @@ import {
 	EventMiddleware as _EventMiddleware,
 	FunctionMiddleware as _FunctionMiddleware,
 } from "./middleware/types";
+import { createNetworkingEvent } from "./events/createNetworkingEvent";
+import { createNetworkingFunction } from "./functions/createNetworkingFunction";
+import { IntrinsicDeclaration, ObfuscateNames } from "./types";
 
 export namespace Networking {
 	/**
 	 * Creates a new event based off the supplied types.
 	 * @param serverMiddleware Middleware for server events
 	 * @param clientMiddleware Middleware for client events
+	 * @metadata macro
 	 */
-	export declare function createEvent<S, C>(): GlobalEvent<S, C>;
+	export function createEvent<S, C>(
+		name?: IntrinsicDeclaration,
+		server?: ObfuscateNames<keyof S>,
+		client?: ObfuscateNames<keyof C>,
+	): GlobalEvent<S, C> {
+		return createNetworkingEvent(name!, server!, client!);
+	}
 
 	/**
 	 * Creates a new function event based off the supplied types.
 	 * @param serverMiddleware Middleware for server events
 	 * @param clientMiddleware Middleware for client events
+	 * @metadata macro
 	 */
-	export declare function createFunction<S, C>(): GlobalFunction<S, C>;
+	export function createFunction<S, C>(
+		name?: IntrinsicDeclaration,
+		server?: ObfuscateNames<keyof S>,
+		client?: ObfuscateNames<keyof C>,
+	): GlobalFunction<S, C> {
+		return createNetworkingFunction(name!, server!, client!);
+	}
 
 	/**
 	 * Stops networking function middleware.
