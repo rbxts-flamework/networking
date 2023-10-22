@@ -29,13 +29,6 @@ export namespace Networking {
 	export const Skip = NetworkingSkip;
 
 	/**
-	 * A function that generates middleware.
-	 * @hidden
-	 * @deprecated Use {@link EventMiddleware} or {@link FunctionMiddleware}
-	 */
-	export type MiddlewareFactory<I extends readonly unknown[] = unknown[], O = void> = _MiddlewareFactory<I, O>;
-
-	/**
 	 * A function that generates an event middleware.
 	 */
 	export type EventMiddleware<I extends readonly unknown[] = unknown[]> = _EventMiddleware<I>;
