@@ -71,7 +71,6 @@ export function createServerHandler<S, C>(
 		handler[name as keyof C] = createServerMethod(
 			() => setupRemote(name),
 			remote,
-			eventGuards[name]?.size() ?? 0,
 			bindables.get(name),
 			middlewareProcessor,
 		) as never;
@@ -84,7 +83,6 @@ type ServerMethod = ServerSender<unknown[]> & ServerReceiver<unknown[]>;
 function createServerMethod(
 	connect: () => void,
 	remote: RemoteEvent,
-	paramCount: number,
 	bindable?: BindableEvent,
 	process?: Middleware<unknown[], unknown>,
 ) {

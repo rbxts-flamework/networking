@@ -71,7 +71,6 @@ export function createClientHandler<S, C>(
 		handler[name as keyof S] = createClientMethod(
 			() => setupRemote(name),
 			remote,
-			eventGuards[name]?.size() ?? 0,
 			bindables.get(name),
 			middlewareProcessor,
 		) as never;
@@ -84,7 +83,6 @@ type ClientMethod = ClientSender<unknown[]> & ClientReceiver<unknown[]>;
 function createClientMethod(
 	connect: () => void,
 	remote: RemoteEvent,
-	paramCount: number,
 	bindable?: BindableEvent,
 	process?: Middleware<unknown[], unknown>,
 ) {
