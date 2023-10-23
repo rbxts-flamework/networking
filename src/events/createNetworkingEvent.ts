@@ -43,33 +43,41 @@ export function createNetworkingEvent<S, C>(
 
 	return {
 		createServer(config, meta) {
-			if (!RunService.IsServer()) {
+			if (RunService.IsRunning() && !RunService.IsServer()) {
 				return undefined!;
 			}
 
-			setupRemotes();
-			return (server ??= createServerHandler<S, C>(
-				remotes,
-				networkInfos,
-				meta!,
-				getDefaultConfiguration(config),
-				signals,
-			));
+			if (server === undefined) {
+				setupRemotes();
+				server = createServerHandler<S, C>(
+					remotes,
+					networkInfos,
+					meta!,
+					getDefaultConfiguration(config),
+					signals,
+				);
+			}
+
+			return server;
 		},
 
 		createClient(config, meta) {
-			if (!RunService.IsClient()) {
+			if (RunService.IsRunning() && !RunService.IsClient()) {
 				return undefined!;
 			}
 
-			setupRemotes();
-			return (client ??= createClientHandler<S, C>(
-				remotes,
-				networkInfos,
-				meta!,
-				getDefaultConfiguration(config),
-				signals,
-			));
+			if (client === undefined) {
+				setupRemotes();
+				client = createClientHandler<S, C>(
+					remotes,
+					networkInfos,
+					meta!,
+					getDefaultConfiguration(config),
+					signals,
+				);
+			}
+
+			return client;
 		},
 
 		registerHandler(key, callback) {
