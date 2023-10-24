@@ -12,6 +12,8 @@ import {
 	ClientReceiver,
 	ClientSender,
 	FunctionConfiguration,
+	FunctionCreateConfiguration,
+	FunctionMetadata,
 	RequestInfo,
 } from "./types";
 import { SignalContainer } from "../util/createSignalContainer";
@@ -21,11 +23,9 @@ export function createClientHandler<S, C>(
 	serverRemotes: Map<string, RemoteEvent>,
 	clientRemotes: Map<string, RemoteEvent>,
 	networkInfos: Map<string, NetworkInfo>,
-	serverEvents: ArbitaryGuards,
-	clientEvents: ArbitaryGuards,
-	config: FunctionConfiguration,
+	functionGuards: FunctionMetadata<C, S>,
+	config: FunctionCreateConfiguration<C>,
 	signals: SignalContainer<FunctionNetworkingEvents>,
-	middlewareFactoryList?: FunctionMiddlewareList<C>,
 ): ClientHandler<S, C> {
 	const handler = {} as ClientHandler<S, C>;
 	const processors = new Map<string, MiddlewareProcessor<unknown[], unknown>>();
@@ -37,8 +37,8 @@ export function createClientHandler<S, C>(
 	function createMethod(name: string, networkInfo: NetworkInfo, remote: RemoteEvent) {
 		if (handler[name as keyof S] !== undefined) return;
 		handler[name as keyof S] = createClientMethod(
-			(serverEvents[name] ?? clientEvents[name])[1],
-			middlewareFactoryList?.[name as never] ?? [],
+			functionGuards.returns[name],
+			config.middleware?.[name as never] ?? [],
 			processors,
 			networkInfo,
 			requestInfo,
@@ -73,12 +73,12 @@ export function createClientHandler<S, C>(
 		createMethod(name, networkInfo, remote);
 
 		remote.OnClientEvent.Connect((id, ...args: unknown[]) => {
-			const guards = clientEvents[name];
+			const guards = functionGuards.incoming[name];
 			if (!guards) return;
 
-			if (!config.disableClientGuards) {
-				const paramGuards = guards[0][0];
-				const restGuard = guards[0][1];
+			if (!config.disableIncomingGuards) {
+				const paramGuards = guards[0];
+				const restGuard = guards[1];
 
 				for (let i = 0; i < math.max(paramGuards.size(), args.size()); i++) {
 					const guard = paramGuards[i] ?? restGuard;
@@ -124,12 +124,12 @@ function createClientMethod(
 	requestInfo: RequestInfo,
 	name: string,
 	remote: RemoteEvent,
-	config: FunctionConfiguration,
+	config: FunctionCreateConfiguration<unknown>,
 	signals: SignalContainer<FunctionNetworkingEvents>,
 ) {
 	const method: { [k in keyof ClientMethod]: ClientMethod[k] } = {
 		invoke(...args: unknown[]) {
-			return this.invokeWithTimeout(config.defaultClientTimeout, ...args);
+			return this.invokeWithTimeout(config.defaultTimeout, ...args);
 		},
 
 		invokeWithTimeout(timeout: number, ...args: unknown[]) {
@@ -139,7 +139,7 @@ function createClientMethod(
 					const id = requestInfo.nextId++;
 					requestInfo.requests.set(id, (value, rejection) => {
 						if (rejection) return reject(rejection);
-						if (!config.disableClientGuards && !guard(value)) {
+						if (!config.disableIncomingGuards && !guard(value)) {
 							if (config.warnOnInvalidGuards) {
 								warn(`Server returned invalid value from event '${name}':`, value);
 							}

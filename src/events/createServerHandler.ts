@@ -1,26 +1,24 @@
 import { Players } from "@rbxts/services";
 import { EventNetworkingEvents } from "../handlers";
 import { createMiddlewareProcessor } from "../middleware/createMiddlewareProcessor";
-import { EventMiddlewareList, Middleware } from "../middleware/types";
+import { Middleware } from "../middleware/types";
 import { NetworkInfo } from "../types";
-import { ArbitaryGuards, EventConfiguration, ServerHandler, ServerReceiver, ServerSender } from "./types";
+import { ArbitaryGuards, EventCreateConfiguration, ServerHandler, ServerReceiver, ServerSender } from "./types";
 import { SignalContainer } from "../util/createSignalContainer";
 
 export function createServerHandler<S, C>(
 	remotes: Map<string, RemoteEvent>,
 	networkInfos: Map<string, NetworkInfo>,
-	serverEvents: ArbitaryGuards,
-	clientEvents: ArbitaryGuards,
-	config: EventConfiguration,
-	signalContainer: SignalContainer<EventNetworkingEvents>,
-	middlewareFactoryList?: EventMiddlewareList<S>,
+	eventGuards: ArbitaryGuards,
+	config: EventCreateConfiguration<S>,
+	signals: SignalContainer<EventNetworkingEvents>,
 ): ServerHandler<C, S> {
 	const handler = {} as ServerHandler<C, S>;
 	const bindables = new Map<string, BindableEvent>();
 	const processors = new Map<string, Middleware<unknown[], unknown>>();
 	const isSetup = new Set<string>();
 
-	for (const [name] of pairs(serverEvents)) {
+	for (const [name] of pairs(eventGuards)) {
 		const bindable = new Instance("BindableEvent");
 		bindables.set(name as string, bindable);
 	}
@@ -34,10 +32,10 @@ export function createServerHandler<S, C>(
 		const middlewareProcessor = processors.get(name)!;
 
 		remote.OnServerEvent.Connect((player, ...args) => {
-			const guards = serverEvents[name];
+			const guards = eventGuards[name];
 			if (!guards) return;
 
-			if (!config.disableServerGuards) {
+			if (!config.disableIncomingGuards) {
 				const paramGuards = guards[0];
 				const restGuard = guards[1];
 
@@ -47,7 +45,7 @@ export function createServerHandler<S, C>(
 						if (config.warnOnInvalidGuards) {
 							warn(`'${player}' sent invalid arguments for event '${name}' (arg #${i}):`, args[i]);
 						}
-						signalContainer.fire("onBadRequest", player, {
+						signals.fire("onBadRequest", player, {
 							networkInfo,
 							argIndex: i,
 							argValue: args[i],
@@ -64,7 +62,7 @@ export function createServerHandler<S, C>(
 	for (const [name, remote] of remotes) {
 		const networkInfo = networkInfos.get(name)!;
 		const middlewareProcessor = createMiddlewareProcessor(
-			middlewareFactoryList?.[name as never],
+			config.middleware?.[name as never],
 			networkInfo,
 			(player, ...args) => bindables.get(name)?.Fire(player, ...args),
 		);
@@ -73,7 +71,6 @@ export function createServerHandler<S, C>(
 		handler[name as keyof C] = createServerMethod(
 			() => setupRemote(name),
 			remote,
-			serverEvents[name]?.size() ?? 0,
 			bindables.get(name),
 			middlewareProcessor,
 		) as never;
@@ -86,7 +83,6 @@ type ServerMethod = ServerSender<unknown[]> & ServerReceiver<unknown[]>;
 function createServerMethod(
 	connect: () => void,
 	remote: RemoteEvent,
-	paramCount: number,
 	bindable?: BindableEvent,
 	process?: Middleware<unknown[], unknown>,
 ) {
@@ -115,21 +111,11 @@ function createServerMethod(
 			}
 		},
 
-		connect(callback, customGuards) {
+		connect(callback) {
 			assert(bindable, `Event ${remote.Name} is not registered as a receiver.`);
 			task.defer(connect);
 
-			return bindable.Event.Connect((player: Player, ...args: unknown[]) => {
-				if (customGuards) {
-					for (let i = 0; i < paramCount; i++) {
-						const guard = customGuards[i];
-						if (guard !== undefined && !guard(args[i])) {
-							return;
-						}
-					}
-				}
-				return callback(player, ...(args as never));
-			});
+			return bindable.Event.Connect(callback);
 		},
 
 		predict(player, ...args) {

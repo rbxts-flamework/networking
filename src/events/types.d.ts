@@ -1,6 +1,13 @@
 import { t } from "@rbxts/t";
-import { FunctionParameters, NetworkingObfuscationMarker, StripTSDoc } from "../types";
+import {
+	FunctionParameters,
+	IntrinsicTupleGuards,
+	IntrinsicObfuscate,
+	NetworkingObfuscationMarker,
+	StripTSDoc,
+} from "../types";
 import { EventNetworkingEvents } from "../handlers";
+import { EventMiddlewareList } from "../middleware/types";
 
 export interface ServerSender<I extends unknown[]> {
 	(player: Player | Player[], ...args: I): void;
@@ -27,12 +34,8 @@ export interface ServerReceiver<I extends unknown[]> {
 	/**
 	 * Connect to this networking event.
 	 * @param callback The callback that will be fired
-	 * @param guards A list of guards that will only be used on this connection
 	 */
-	connect<F extends I>(
-		cb: (player: Player, ...args: F) => void,
-		guards?: { [k in keyof F]?: t.check<F[k]> },
-	): RBXScriptConnection;
+	connect(cb: (player: Player, ...args: I) => void): RBXScriptConnection;
 
 	/**
 	 * Fires a server event using player as the sender.
@@ -53,9 +56,8 @@ export interface ClientReceiver<I extends unknown[]> {
 	/**
 	 * Connect to this networking event.
 	 * @param callback The callback that will be fired
-	 * @param guards A list of guards that will only be used on this connection
 	 */
-	connect<F extends I>(cb: (...args: F) => void, guards?: { [k in keyof F]?: t.check<F[k]> }): RBXScriptConnection;
+	connect(cb: (...args: I) => void): RBXScriptConnection;
 
 	/**
 	 * Fires a client event.
@@ -71,16 +73,39 @@ export type ClientHandler<E, R> = NetworkingObfuscationMarker &
 	{ [k in keyof E]: ClientSender<FunctionParameters<E[k]>> } &
 	{ [k in keyof StripTSDoc<R>]: ClientReceiver<FunctionParameters<R[k]>> };
 
+export interface EventCreateConfiguration<T> {
+	/**
+	 * Disables input validation, allowing any value to pass.
+	 * Defaults to `false`
+	 */
+	disableIncomingGuards: boolean;
+
+	/**
+	 * Emit a warning whenever a guard fails.
+	 * Defaults to `RunService.IsStudio()`
+	 */
+	warnOnInvalidGuards: boolean;
+
+	/**
+	 * The middleware for each event.
+	 */
+	middleware: EventMiddlewareList<T>;
+}
+
 export interface GlobalEvent<S, C> {
 	/**
 	 * This is the server implementation of the network and does not exist on the client.
+	 *
+	 * @metadata macro {@link config intrinsic-const} {@link config intrinsic-middleware}
 	 */
-	server: ServerHandler<C, S>;
+	createServer(config: Partial<EventCreateConfiguration<S>>, meta?: EventMetadata<S>): ServerHandler<C, S>;
 
 	/**
 	 * This is the client implementation of the network and does not exist on the server.
+	 *
+	 * @metadata macro {@link config intrinsic-const} {@link config intrinsic-middleware}
 	 */
-	client: ClientHandler<S, C>;
+	createClient(config: Partial<EventCreateConfiguration<C>>, meta?: EventMetadata<C>): ClientHandler<S, C>;
 
 	/**
 	 * Registers a networking event handler.
@@ -93,24 +118,6 @@ export interface GlobalEvent<S, C> {
 	): RBXScriptConnection;
 }
 
-export interface EventConfiguration {
-	/**
-	 * Disables input validation on the server, allowing any value to pass.
-	 * Defaults to `false`
-	 */
-	disableServerGuards: boolean;
-
-	/**
-	 * Disables input validation on the client, allowing any value to pass.
-	 * Defaults to `false`
-	 */
-	disableClientGuards: boolean;
-
-	/**
-	 * Emit a warning whenever a guard fails.
-	 * Defaults to `RunService.IsStudio()`
-	 */
-	warnOnInvalidGuards: boolean;
-}
+export type EventMetadata<T> = IntrinsicObfuscate<{ [k in keyof T]: IntrinsicTupleGuards<Parameters<T[k]>> }>;
 
 export type ArbitaryGuards = { [key: string]: [t.check<unknown>[], t.check<unknown> | undefined] };

@@ -1,49 +1,49 @@
-import { EventConfiguration, GlobalEvent } from "./events/types";
-import { FunctionConfiguration, GlobalFunction } from "./functions/types";
+import { GlobalEvent } from "./events/types";
+import { GlobalFunction } from "./functions/types";
 import { Skip as NetworkingSkip } from "./middleware/skip";
 import { NetworkingFunctionError } from "./functions/errors";
 import {
-	EventMiddlewareList,
-	FunctionMiddlewareList,
 	MiddlewareFactory as _MiddlewareFactory,
 	EventMiddleware as _EventMiddleware,
 	FunctionMiddleware as _FunctionMiddleware,
 } from "./middleware/types";
+import { createNetworkingEvent } from "./events/createNetworkingEvent";
+import { createNetworkingFunction } from "./functions/createNetworkingFunction";
+import { IntrinsicDeclaration, ObfuscateNames } from "./types";
 
 export namespace Networking {
 	/**
 	 * Creates a new event based off the supplied types.
 	 * @param serverMiddleware Middleware for server events
 	 * @param clientMiddleware Middleware for client events
+	 * @metadata macro
 	 */
-	export declare function createEvent<S, C>(
-		serverMiddleware?: EventMiddlewareList<S>,
-		clientMiddleware?: EventMiddlewareList<C>,
-		configOptions?: Partial<EventConfiguration>,
-	): GlobalEvent<S, C>;
+	export function createEvent<S, C>(
+		name?: IntrinsicDeclaration,
+		server?: ObfuscateNames<keyof S>,
+		client?: ObfuscateNames<keyof C>,
+	): GlobalEvent<S, C> {
+		return createNetworkingEvent(name!, server!, client!);
+	}
 
 	/**
 	 * Creates a new function event based off the supplied types.
 	 * @param serverMiddleware Middleware for server events
 	 * @param clientMiddleware Middleware for client events
+	 * @metadata macro
 	 */
-	export declare function createFunction<S, C>(
-		serverMiddleware?: FunctionMiddlewareList<S>,
-		clientMiddleware?: FunctionMiddlewareList<C>,
-		configOptions?: Partial<FunctionConfiguration>,
-	): GlobalFunction<S, C>;
+	export function createFunction<S, C>(
+		name?: IntrinsicDeclaration,
+		server?: ObfuscateNames<keyof S>,
+		client?: ObfuscateNames<keyof C>,
+	): GlobalFunction<S, C> {
+		return createNetworkingFunction(name!, server!, client!);
+	}
 
 	/**
 	 * Stops networking function middleware.
 	 */
 	export const Skip = NetworkingSkip;
-
-	/**
-	 * A function that generates middleware.
-	 * @hidden
-	 * @deprecated Use {@link EventMiddleware} or {@link FunctionMiddleware}
-	 */
-	export type MiddlewareFactory<I extends readonly unknown[] = unknown[], O = void> = _MiddlewareFactory<I, O>;
 
 	/**
 	 * A function that generates an event middleware.
