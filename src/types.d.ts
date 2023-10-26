@@ -46,9 +46,6 @@ export type IntrinsicObfuscate<T> = Modding.Intrinsic<"obfuscate-obj", [T, "remo
 export type IntrinsicTupleGuards<T> = Modding.Intrinsic<"tuple-guards", [T], GuardType>;
 
 /** @hidden Intrinsic feature not intended for users */
-export type IntrinsicGuard<T> = Modding.Intrinsic<"guard", [T], t.check<T>>;
-
-/** @hidden Intrinsic feature not intended for users */
 export type IntrinsicDeclaration = Modding.Intrinsic<"declaration-uid", [], string>;
 
 type GuardType = [t.check<unknown>[], t.check<unknown> | undefined];

@@ -4,7 +4,6 @@ import {
 	FunctionParameters,
 	FunctionReturn,
 	IntrinsicTupleGuards,
-	IntrinsicGuard,
 	IntrinsicObfuscate,
 	NetworkingObfuscationMarker,
 	StripTSDoc,
@@ -175,7 +174,7 @@ export interface RequestInfo {
  */
 export type FunctionMetadata<T, R> = Modding.Many<{
 	incoming: IntrinsicObfuscate<{ [k in keyof T]: IntrinsicTupleGuards<Parameters<T[k]>> }>;
-	returns: IntrinsicObfuscate<{ [k in keyof R]: IntrinsicGuard<ReturnType<R[k]>> }>;
+	returns: IntrinsicObfuscate<{ [k in keyof R]: Modding.Generic<ReturnType<R[k]>, "guard"> }>;
 }>;
 
 export type ArbitaryGuards = {
