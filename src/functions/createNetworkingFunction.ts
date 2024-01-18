@@ -6,6 +6,9 @@ import { createGenericHandler } from "./createGenericHandler";
 import { createServerMethod } from "./createServerMethod";
 import { createClientMethod } from "./createClientMethod";
 
+const SERVER_PREFIX = "$";
+const CLIENT_PREFIX = "@";
+
 function getDefaultConfiguration<T>(config: Partial<FunctionCreateConfiguration<T>>) {
 	return identity<FunctionCreateConfiguration<T>>({
 		middleware: config.middleware ?? {},
@@ -36,8 +39,8 @@ export function createNetworkingFunction<S, C>(
 					globalName,
 					serverNames,
 					clientNames,
-					"$",
-					"@",
+					SERVER_PREFIX,
+					CLIENT_PREFIX,
 					meta!,
 					getDefaultConfiguration(config),
 					signals,
@@ -58,8 +61,8 @@ export function createNetworkingFunction<S, C>(
 					globalName,
 					clientNames,
 					serverNames,
-					"@",
-					"$",
+					CLIENT_PREFIX,
+					SERVER_PREFIX,
 					meta!,
 					getDefaultConfiguration(config),
 					signals,
