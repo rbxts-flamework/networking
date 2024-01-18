@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { RunService } from "@rbxts/services";
+import { Players, RunService } from "@rbxts/services";
 import { createEvent } from "../event/createEvent";
 import { NetworkInfo } from "../types";
 import { NetworkingFunctionError, getFunctionError } from "./errors";
@@ -81,6 +81,18 @@ export function createFunctionSender(options: CreateFunctionSenderOptions): Func
 			}
 
 			processResponse(requestInfo, id, processResult, result);
+		});
+
+		Players.PlayerRemoving.Connect((player) => {
+			const requestInfo = requestInfoServer.get(player);
+			requestInfoServer.delete(player);
+
+			if (requestInfo) {
+				// Cancel all existing requests from this player.
+				for (const [, request] of requestInfo.requests) {
+					request(undefined, NetworkingFunctionError.Cancelled);
+				}
+			}
 		});
 	} else {
 		event.connectClient((id, processResult, result) => {
