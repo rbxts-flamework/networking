@@ -11,11 +11,13 @@ function findByAttribute(parent: Instance, id: string) {
 function waitByAttribute(parent: Instance, id: string) {
 	let instance = findByAttribute(parent, id);
 
-	while (!instance) {
-		instance = parent.ChildAdded.Wait()[0];
+	if (!instance) {
+		while (true) {
+			instance = parent.ChildAdded.Wait()[0];
 
-		if (instance.GetAttribute("id") === id) {
-			break;
+			if (instance.GetAttribute("id") === id) {
+				break;
+			}
 		}
 	}
 
