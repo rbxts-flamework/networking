@@ -1,6 +1,7 @@
 import { FunctionReceiverInterface } from "../function/createFunctionReceiver";
 import { FunctionSenderInterface } from "../function/createFunctionSender";
 import { NetworkingFunctionError } from "../function/errors";
+import { timeoutPromise } from "../util/timeoutPromise";
 import { FunctionCreateConfiguration, ServerReceiver, ServerSender } from "./types";
 
 type ServerMethod = ServerSender<unknown[], unknown> & ServerReceiver<unknown[], unknown>;
@@ -44,8 +45,4 @@ export function createServerMethod(
 	});
 
 	return method;
-}
-
-function timeoutPromise(timeout: number, rejectValue: unknown) {
-	return Promise.delay(timeout).then(() => Promise.reject(rejectValue));
 }
