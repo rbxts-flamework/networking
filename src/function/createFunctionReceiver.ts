@@ -5,7 +5,7 @@ import { NetworkInfo } from "../types";
 import { NetworkingFunctionError } from "./errors";
 import { createMiddlewareProcessor } from "../middleware/createMiddlewareProcessor";
 import { MiddlewareFactory, MiddlewareProcessor } from "../middleware/types";
-import { Skip } from "../middleware/skip";
+import { Skip, SkipBadRequest } from "../middleware/skip";
 
 export interface CreateFunctionReceiverOptions {
 	/**
@@ -108,5 +108,9 @@ export function createFunctionReceiver(options: CreateFunctionReceiverOptions): 
 }
 
 function getProcessResult(value: unknown) {
-	return value === Skip ? NetworkingFunctionError.Cancelled : true;
+	return value === Skip
+		? NetworkingFunctionError.Cancelled
+		: value === SkipBadRequest
+		? NetworkingFunctionError.BadRequest
+		: true;
 }

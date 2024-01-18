@@ -1,6 +1,6 @@
 import { NetworkingFunctionError } from "../function/errors";
 import { NetworkInfo } from "../types";
-import { Skip } from "../middleware/skip";
+import { SkipBadRequest } from "../middleware/skip";
 import { FunctionNetworkingEvents } from "../handlers";
 import { ClientHandler, FunctionCreateConfiguration, FunctionMetadata, ServerHandler } from "./types";
 import { SignalContainer } from "../util/createSignalContainer";
@@ -45,7 +45,6 @@ export function createGenericHandler<T extends ClientHandler<S, R> | ServerHandl
 			const guards = metadata.incoming[name];
 			assert(guards);
 
-			// TODO: this will reject with `Skipped` instead of `BadRequest`
 			incomingMiddleware.unshift(
 				createGuardMiddleware(
 					name,
@@ -54,7 +53,7 @@ export function createGenericHandler<T extends ClientHandler<S, R> | ServerHandl
 					networkInfo,
 					config.warnOnInvalidGuards,
 					signals,
-					Skip as unknown,
+					SkipBadRequest as unknown,
 				),
 			);
 		}
