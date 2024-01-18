@@ -65,13 +65,13 @@ export interface ClientReceiver<I extends unknown[]> {
 	predict(...args: I): void;
 }
 
-export type ServerHandler<E, R> = NetworkingObfuscationMarker &
-	{ [k in keyof E]: ServerSender<FunctionParameters<E[k]>> } &
-	{ [k in keyof StripTSDoc<R>]: ServerReceiver<FunctionParameters<R[k]>> };
+export type ServerHandler<E, R> = NetworkingObfuscationMarker & {
+	[k in keyof E]: ServerSender<FunctionParameters<E[k]>>;
+} & { [k in keyof StripTSDoc<R>]: ServerReceiver<FunctionParameters<R[k]>> };
 
-export type ClientHandler<E, R> = NetworkingObfuscationMarker &
-	{ [k in keyof E]: ClientSender<FunctionParameters<E[k]>> } &
-	{ [k in keyof StripTSDoc<R>]: ClientReceiver<FunctionParameters<R[k]>> };
+export type ClientHandler<E, R> = NetworkingObfuscationMarker & {
+	[k in keyof E]: ClientSender<FunctionParameters<E[k]>>;
+} & { [k in keyof StripTSDoc<R>]: ClientReceiver<FunctionParameters<R[k]>> };
 
 export interface EventCreateConfiguration<T> {
 	/**

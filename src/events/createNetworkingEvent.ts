@@ -1,12 +1,10 @@
-import Object from "@rbxts/object-utils";
 import { RunService } from "@rbxts/services";
-import { NetworkInfo } from "../types";
-import { populateInstanceMap } from "../util/populateInstanceMap";
-import { createClientHandler } from "./createClientHandler";
-import { createServerHandler } from "./createServerHandler";
-import { ArbitaryGuards, ClientHandler, EventCreateConfiguration, GlobalEvent, ServerHandler } from "./types";
+import { createClientMethod } from "./createClientMethod";
+import { createServerMethod } from "./createServerMethod";
+import { ClientHandler, EventCreateConfiguration, GlobalEvent, ServerHandler } from "./types";
 import { createSignalContainer } from "../util/createSignalContainer";
 import { EventNetworkingEvents } from "../handlers";
+import { createGenericHandler } from "./createGenericHandler";
 
 function getDefaultConfiguration<T>(config: Partial<EventCreateConfiguration<T>>) {
 	return identity<EventCreateConfiguration<T>>({
@@ -21,22 +19,7 @@ export function createNetworkingEvent<S, C>(
 	serverNames: string[],
 	clientNames: string[],
 ): GlobalEvent<S, C> {
-	const networkInfos = new Map<string, NetworkInfo>();
-	const remotes = new Map<string, RemoteEvent>();
 	const signals = createSignalContainer<EventNetworkingEvents>();
-
-	const setupRemotes = () => {
-		populateInstanceMap("RemoteEvent", `events-${globalName}`, serverNames, remotes);
-		populateInstanceMap("RemoteEvent", `events-${globalName}`, clientNames, remotes);
-
-		for (const [name] of remotes) {
-			networkInfos.set(name, {
-				eventType: "Event",
-				globalName,
-				name,
-			});
-		}
-	};
 
 	let server: ServerHandler<C, S> | undefined;
 	let client: ClientHandler<S, C> | undefined;
@@ -48,13 +31,14 @@ export function createNetworkingEvent<S, C>(
 			}
 
 			if (server === undefined) {
-				setupRemotes();
-				server = createServerHandler<S, C>(
-					remotes,
-					networkInfos,
+				server = createGenericHandler<ServerHandler<C, S>, C, S>(
+					globalName,
+					serverNames,
+					clientNames,
 					meta!,
 					getDefaultConfiguration(config),
 					signals,
+					createServerMethod,
 				);
 			}
 
@@ -67,13 +51,14 @@ export function createNetworkingEvent<S, C>(
 			}
 
 			if (client === undefined) {
-				setupRemotes();
-				client = createClientHandler<S, C>(
-					remotes,
-					networkInfos,
+				client = createGenericHandler<ClientHandler<S, C>, S, C>(
+					globalName,
+					clientNames,
+					serverNames,
 					meta!,
 					getDefaultConfiguration(config),
 					signals,
+					createClientMethod,
 				);
 			}
 
