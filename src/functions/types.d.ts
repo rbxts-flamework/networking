@@ -1,4 +1,3 @@
-import { t } from "@rbxts/t";
 import { NetworkingFunctionError } from "../function/errors";
 import {
 	FunctionParameters,
@@ -176,7 +175,3 @@ export type FunctionMetadata<T, R> = Modding.Many<{
 	incoming: IntrinsicObfuscate<{ [k in keyof T]: IntrinsicTupleGuards<Parameters<T[k]>> }>;
 	returns: IntrinsicObfuscate<{ [k in keyof R]: Modding.Generic<ReturnType<R[k]>, "guard"> }>;
 }>;
-
-export type ArbitaryGuards = {
-	[key: string]: [parameters: [t.check<unknown>[], t.check<unknown> | undefined], result: t.check<unknown>];
-};

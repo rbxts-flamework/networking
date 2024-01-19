@@ -1,13 +1,14 @@
-import { t } from "@rbxts/t";
 import {
 	FunctionParameters,
 	IntrinsicTupleGuards,
 	IntrinsicObfuscate,
 	NetworkingObfuscationMarker,
 	StripTSDoc,
+	NetworkUnreliable,
 } from "../types";
 import { EventNetworkingEvents } from "../handlers";
 import { EventMiddlewareList } from "../middleware/types";
+import { Modding } from "@flamework/core";
 
 export interface ServerSender<I extends unknown[]> {
 	(player: Player | Player[], ...args: I): void;
@@ -98,14 +99,14 @@ export interface GlobalEvent<S, C> {
 	 *
 	 * @metadata macro {@link config intrinsic-const} {@link config intrinsic-middleware}
 	 */
-	createServer(config: Partial<EventCreateConfiguration<S>>, meta?: EventMetadata<S>): ServerHandler<C, S>;
+	createServer(config: Partial<EventCreateConfiguration<S>>, meta?: EventMetadata<S, C>): ServerHandler<C, S>;
 
 	/**
 	 * This is the client implementation of the network and does not exist on the server.
 	 *
 	 * @metadata macro {@link config intrinsic-const} {@link config intrinsic-middleware}
 	 */
-	createClient(config: Partial<EventCreateConfiguration<C>>, meta?: EventMetadata<C>): ClientHandler<S, C>;
+	createClient(config: Partial<EventCreateConfiguration<C>>, meta?: EventMetadata<C, S>): ClientHandler<S, C>;
 
 	/**
 	 * Registers a networking event handler.
@@ -118,6 +119,12 @@ export interface GlobalEvent<S, C> {
 	): RBXScriptConnection;
 }
 
-export type EventMetadata<T> = IntrinsicObfuscate<{ [k in keyof T]: IntrinsicTupleGuards<Parameters<T[k]>> }>;
-
-export type ArbitaryGuards = { [key: string]: [t.check<unknown>[], t.check<unknown> | undefined] };
+export type EventMetadata<R, S> = Modding.Many<{
+	incoming: IntrinsicObfuscate<{ [k in keyof R]: IntrinsicTupleGuards<Parameters<R[k]>> }>;
+	incomingUnreliable: IntrinsicObfuscate<{
+		[k in keyof R]: R[k] extends NetworkUnreliable<unknown> ? true : undefined;
+	}>;
+	outgoingUnreliable: IntrinsicObfuscate<{
+		[k in keyof S]: S[k] extends NetworkUnreliable<unknown> ? true : undefined;
+	}>;
+}>;

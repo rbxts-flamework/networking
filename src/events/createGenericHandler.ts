@@ -1,13 +1,6 @@
 import { EventNetworkingEvents } from "../handlers";
 import { NetworkInfo } from "../types";
-import {
-	ArbitaryGuards,
-	ClientHandler,
-	ClientReceiver,
-	ClientSender,
-	EventCreateConfiguration,
-	ServerHandler,
-} from "./types";
+import { ClientHandler, EventCreateConfiguration, EventMetadata, ServerHandler } from "./types";
 import { SignalContainer } from "../util/createSignalContainer";
 import { createGuardMiddleware } from "../middleware/createGuardMiddleware";
 import { EventInterface, createEvent } from "../event/createEvent";
@@ -16,15 +9,17 @@ export function createGenericHandler<T extends ClientHandler<S, R> | ServerHandl
 	globalName: string,
 	receiverNames: string[],
 	senderNames: string[],
-	incomingGuards: ArbitaryGuards,
+	metadata: EventMetadata<R, S>,
 	config: EventCreateConfiguration<R>,
 	signals: SignalContainer<EventNetworkingEvents>,
-	method: (event: EventInterface) => unknown,
+	method: (receiver: EventInterface, sender: EventInterface) => unknown,
 ): T {
 	const handler = {} as T;
 
 	const receiverNameSet = new Set(receiverNames);
 	for (const name of new Set([...receiverNames, ...senderNames])) {
+		const isIncomingUnreliable = metadata.incomingUnreliable[name] === true;
+		const isOutgoingUnreliable = metadata.outgoingUnreliable[name] === true;
 		const isReceiver = receiverNameSet.has(name);
 		const configMiddleware = config.middleware[name as keyof R];
 		const incomingMiddleware = configMiddleware ? table.clone(configMiddleware) : [];
@@ -35,7 +30,7 @@ export function createGenericHandler<T extends ClientHandler<S, R> | ServerHandl
 		};
 
 		if (!config.disableIncomingGuards && isReceiver) {
-			const guards = incomingGuards[name];
+			const guards = metadata.incoming[name];
 			assert(guards);
 
 			incomingMiddleware.unshift(
@@ -43,41 +38,22 @@ export function createGenericHandler<T extends ClientHandler<S, R> | ServerHandl
 			);
 		}
 
-		const event = createEvent({
-			namespace: globalName,
-			id: name,
-			debugName: name,
-			networkInfo,
-			incomingMiddleware,
-		});
+		const create = (unreliable: boolean) => {
+			return createEvent({
+				reliability: unreliable ? "unreliable" : "reliable",
+				namespace: globalName,
+				id: unreliable ? `unreliable:${name}` : name,
+				debugName: name,
+				networkInfo,
+				incomingMiddleware,
+			});
+		};
 
-		handler[name as keyof T] = method(event) as never;
+		const receiver = create(isIncomingUnreliable);
+		const sender = isOutgoingUnreliable === isIncomingUnreliable ? receiver : create(isOutgoingUnreliable);
+
+		handler[name as keyof T] = method(receiver, sender) as never;
 	}
 
 	return handler;
-}
-
-type ClientMethod = ClientSender<unknown[]> & ClientReceiver<unknown[]>;
-function createClientMethod(event: EventInterface) {
-	const method: { [k in keyof ClientMethod]: ClientMethod[k] } = {
-		fire(...args) {
-			event.fireServer(...args);
-		},
-
-		connect(callback) {
-			return event.connectClient(callback);
-		},
-
-		predict(...args) {
-			return event.invoke(undefined, ...args);
-		},
-	};
-
-	setmetatable(method, {
-		__call: (method, ...args) => {
-			method.fire(...args);
-		},
-	});
-
-	return method;
 }
