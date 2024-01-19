@@ -101,7 +101,10 @@ export function createFunctionReceiver(options: CreateFunctionReceiverOptions): 
 				return Promise.reject(NetworkingFunctionError.Unprocessed);
 			}
 
-			return callback(player, ...args);
+			return callback(player, ...args).then((value) => {
+				const processResult = getProcessResult(value);
+				return processResult === true ? value : Promise.reject(processResult);
+			});
 		},
 	};
 }
