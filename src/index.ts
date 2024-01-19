@@ -9,7 +9,7 @@ import {
 } from "./middleware/types";
 import { createNetworkingEvent } from "./events/createNetworkingEvent";
 import { createNetworkingFunction } from "./functions/createNetworkingFunction";
-import { IntrinsicDeclaration, ObfuscateNames } from "./types";
+import { IntrinsicDeclaration, NetworkUnreliable, ObfuscateNames } from "./types";
 
 export namespace Networking {
 	/**
@@ -44,6 +44,13 @@ export namespace Networking {
 	 * Stops networking function middleware.
 	 */
 	export const Skip = NetworkingSkip;
+
+	/**
+	 * Specifies that this event is unreliable.
+	 *
+	 * This does not function for remote functions.
+	 */
+	export type Unreliable<T> = NetworkUnreliable<T>;
 
 	/**
 	 * A function that generates an event middleware.

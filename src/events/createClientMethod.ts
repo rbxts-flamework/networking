@@ -3,18 +3,18 @@ import { EventInterface } from "../event/createEvent";
 
 type ClientMethod = ClientSender<never[]> & ClientReceiver<never[]>;
 
-export function createClientMethod(event: EventInterface) {
+export function createClientMethod(receiver: EventInterface, sender: EventInterface) {
 	const method: { [k in keyof ClientMethod]: ClientMethod[k] } = {
 		fire(...args) {
-			event.fireServer(...args);
+			sender.fireServer(...args);
 		},
 
 		connect(callback) {
-			return event.connectClient(callback as never);
+			return receiver.connectClient(callback as never);
 		},
 
 		predict(...args) {
-			return event.invoke(undefined, ...args);
+			return receiver.invoke(undefined, ...args);
 		},
 	};
 

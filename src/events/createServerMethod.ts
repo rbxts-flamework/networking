@@ -4,20 +4,20 @@ import { EventInterface } from "../event/createEvent";
 
 type ServerMethod = ServerSender<unknown[]> & ServerReceiver<unknown[]>;
 
-export function createServerMethod(event: EventInterface) {
+export function createServerMethod(receiver: EventInterface, sender: EventInterface) {
 	const method: { [k in keyof ServerMethod]: ServerMethod[k] } = {
 		fire(players, ...args) {
 			if (typeIs(players, "Instance")) {
-				event.fireClient(players, ...args);
+				sender.fireClient(players, ...args);
 			} else {
 				for (const player of players) {
-					event.fireClient(player, ...args);
+					sender.fireClient(player, ...args);
 				}
 			}
 		},
 
 		broadcast(...args) {
-			event.fireAllClients(...args);
+			sender.fireAllClients(...args);
 		},
 
 		except(players, ...args) {
@@ -31,11 +31,11 @@ export function createServerMethod(event: EventInterface) {
 		},
 
 		connect(callback) {
-			return event.connectServer(callback);
+			return receiver.connectServer(callback);
 		},
 
 		predict(player, ...args) {
-			event.invoke(player, ...args);
+			receiver.invoke(player, ...args);
 		},
 	};
 

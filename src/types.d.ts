@@ -18,6 +18,9 @@ export interface NetworkInfo {
 	eventType: "Event" | "Function";
 }
 
+export type NetworkUnreliable<T> = T & { _flamework_unreliable: never };
+export type NetworkCallback<T> = T extends NetworkUnreliable<infer C> ? C : T;
+
 export interface NetworkingObfuscationMarker {
 	/**
 	 * An internal marker type used to signify to Flamework to obfuscate access expressions.
