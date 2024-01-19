@@ -129,5 +129,3 @@ export type EventMetadata<R, S> = Modding.Many<{
 		[k in keyof S]: S[k] extends NetworkUnreliable<unknown> ? true : undefined;
 	}>;
 }>;
-
-export type ArbitaryGuards = { [key: string]: [t.check<unknown>[], t.check<unknown> | undefined] };

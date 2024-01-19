@@ -1,14 +1,6 @@
 import { EventNetworkingEvents } from "../handlers";
 import { NetworkInfo } from "../types";
-import {
-	ArbitaryGuards,
-	ClientHandler,
-	ClientReceiver,
-	ClientSender,
-	EventCreateConfiguration,
-	EventMetadata,
-	ServerHandler,
-} from "./types";
+import { ClientHandler, EventCreateConfiguration, EventMetadata, ServerHandler } from "./types";
 import { SignalContainer } from "../util/createSignalContainer";
 import { createGuardMiddleware } from "../middleware/createGuardMiddleware";
 import { EventInterface, createEvent } from "../event/createEvent";
