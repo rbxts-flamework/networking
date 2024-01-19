@@ -1,4 +1,3 @@
-import { t } from "@rbxts/t";
 import { NetworkingFunctionError } from "../function/errors";
 import {
 	FunctionParameters,

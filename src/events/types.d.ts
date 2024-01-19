@@ -1,4 +1,3 @@
-import { t } from "@rbxts/t";
 import {
 	FunctionParameters,
 	IntrinsicTupleGuards,
