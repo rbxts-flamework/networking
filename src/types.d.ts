@@ -39,10 +39,15 @@ export type StripTSDoc<T, E extends string | number | symbol = keyof T> = {
 	[k in E]: k extends keyof T ? T[k] : never;
 };
 
-export type ObfuscateNames<T> = Modding.Many<(T extends T ? Modding.Obfuscate<T & string, "remotes"> : never)[]>;
+export type ObfuscateNames<T> = IntrinsicObfuscateArray<
+	(T extends T ? Modding.Obfuscate<T & string, "remotes"> : never)[]
+>;
 
 /** @hidden Intrinsic feature not intended for users */
 export type IntrinsicObfuscate<T> = Modding.Intrinsic<"obfuscate-obj", [T, "remotes"], Record<string, T[keyof T]>>;
+
+/** @hidden Intrinsic feature not intended for users */
+export type IntrinsicObfuscateArray<T> = Modding.Intrinsic<"shuffle-array", [T], T>;
 
 /** @hidden Intrinsic feature not intended for users */
 export type IntrinsicTupleGuards<T> = Modding.Intrinsic<"tuple-guards", [T], GuardType>;
