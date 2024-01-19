@@ -19,7 +19,6 @@ export interface NetworkInfo {
 }
 
 export type NetworkUnreliable<T> = T & { _flamework_unreliable: never };
-export type NetworkCallback<T> = T extends NetworkUnreliable<infer C> ? C : T;
 
 export interface NetworkingObfuscationMarker {
 	/**

@@ -5,7 +5,6 @@ import {
 	IntrinsicObfuscate,
 	NetworkingObfuscationMarker,
 	StripTSDoc,
-	NetworkCallback,
 	NetworkUnreliable,
 } from "../types";
 import { EventNetworkingEvents } from "../handlers";
@@ -122,7 +121,7 @@ export interface GlobalEvent<S, C> {
 }
 
 export type EventMetadata<R, S> = Modding.Many<{
-	incoming: IntrinsicObfuscate<{ [k in keyof R]: IntrinsicTupleGuards<Parameters<NetworkCallback<R[k]>>> }>;
+	incoming: IntrinsicObfuscate<{ [k in keyof R]: IntrinsicTupleGuards<Parameters<R[k]>> }>;
 	incomingUnreliable: IntrinsicObfuscate<{
 		[k in keyof R]: R[k] extends NetworkUnreliable<unknown> ? true : undefined;
 	}>;
