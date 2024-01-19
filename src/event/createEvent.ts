@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { RunService } from "@rbxts/services";
 import { MiddlewareFactory, MiddlewareProcessor } from "../middleware/types";
 import { createRemoteInstance } from "./createRemoteInstance";

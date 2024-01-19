@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { RunService } from "@rbxts/services";
 import { createEvent } from "../event/createEvent";
 import { NetworkInfo } from "../types";
