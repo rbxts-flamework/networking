@@ -1,5 +1,5 @@
 import { t } from "@rbxts/t";
-import { NetworkingFunctionError } from "../functions/errors";
+import { NetworkingFunctionError } from "../function/errors";
 import {
 	FunctionParameters,
 	FunctionReturn,
@@ -73,13 +73,13 @@ export interface ClientReceiver<I extends unknown[], O> {
 	predict(...args: I): Promise<O>;
 }
 
-export type ServerHandler<E, R> = NetworkingObfuscationMarker &
-	{ [k in keyof E]: ServerSender<FunctionParameters<E[k]>, FunctionReturn<E[k]>> } &
-	{ [k in keyof StripTSDoc<R>]: ServerReceiver<FunctionParameters<R[k]>, FunctionReturn<R[k]>> };
+export type ServerHandler<E, R> = NetworkingObfuscationMarker & {
+	[k in keyof E]: ServerSender<FunctionParameters<E[k]>, FunctionReturn<E[k]>>;
+} & { [k in keyof StripTSDoc<R>]: ServerReceiver<FunctionParameters<R[k]>, FunctionReturn<R[k]>> };
 
-export type ClientHandler<E, R> = NetworkingObfuscationMarker &
-	{ [k in keyof E]: ClientSender<FunctionParameters<E[k]>, FunctionReturn<E[k]>> } &
-	{ [k in keyof StripTSDoc<R>]: ClientReceiver<FunctionParameters<R[k]>, FunctionReturn<R[k]>> };
+export type ClientHandler<E, R> = NetworkingObfuscationMarker & {
+	[k in keyof E]: ClientSender<FunctionParameters<E[k]>, FunctionReturn<E[k]>>;
+} & { [k in keyof StripTSDoc<R>]: ClientReceiver<FunctionParameters<R[k]>, FunctionReturn<R[k]>> };
 
 export interface FunctionCreateConfiguration<T> {
 	/**

@@ -1,7 +1,7 @@
 import { GlobalEvent } from "./events/types";
 import { GlobalFunction } from "./functions/types";
 import { Skip as NetworkingSkip } from "./middleware/skip";
-import { NetworkingFunctionError } from "./functions/errors";
+import { NetworkingFunctionError } from "./function/errors";
 import {
 	MiddlewareFactory as _MiddlewareFactory,
 	EventMiddleware as _EventMiddleware,
