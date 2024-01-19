@@ -48,7 +48,7 @@ export namespace Networking {
 	/**
 	 * Specifies that this event is unreliable.
 	 *
-	 * This does not function for remote functions.
+	 * This will only work on remote events.
 	 */
 	export type Unreliable<T> = NetworkUnreliable<T>;
 
