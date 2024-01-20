@@ -185,10 +185,10 @@ export type Functions<T> = ExtractMembers<T, Callback>;
  */
 export type NamespaceMetadata<R, S> = Modding.Many<{
 	incomingIds: ObfuscateNames<keyof Functions<R>>;
-	incoming: IntrinsicObfuscate<{ [k in keyof R]: IntrinsicTupleGuards<Parameters<R[k]>> }>;
+	incoming: IntrinsicObfuscate<{ [k in keyof Functions<R>]: IntrinsicTupleGuards<Parameters<R[k]>> }>;
 
 	outgoingIds: ObfuscateNames<keyof Functions<S>>;
-	outgoing: IntrinsicObfuscate<{ [k in keyof S]: Modding.Generic<ReturnType<S[k]>, "guard"> }>;
+	outgoing: IntrinsicObfuscate<{ [k in keyof Functions<S>]: Modding.Generic<ReturnType<S[k]>, "guard"> }>;
 
 	namespaceIds: ObfuscateNames<keyof FunctionNamespaces<R> | keyof FunctionNamespaces<S>>;
 	namespaces: IntrinsicObfuscate<
