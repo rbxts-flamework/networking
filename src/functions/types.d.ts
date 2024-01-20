@@ -6,9 +6,10 @@ import {
 	IntrinsicObfuscate,
 	NetworkingObfuscationMarker,
 	StripTSDoc,
+	ObfuscateNames,
 } from "../types";
 import { FunctionNetworkingEvents } from "../handlers";
-import { FunctionMiddlewareList } from "../middleware/types";
+import { FunctionMiddleware } from "../middleware/types";
 import { Modding } from "@flamework/core";
 
 export interface ServerSender<I extends unknown[], O> {
@@ -73,12 +74,20 @@ export interface ClientReceiver<I extends unknown[], O> {
 }
 
 export type ServerHandler<E, R> = NetworkingObfuscationMarker & {
-	[k in keyof E]: ServerSender<FunctionParameters<E[k]>, FunctionReturn<E[k]>>;
-} & { [k in keyof StripTSDoc<R>]: ServerReceiver<FunctionParameters<R[k]>, FunctionReturn<R[k]>> };
+	[k in keyof Functions<E>]: ServerSender<FunctionParameters<E[k]>, FunctionReturn<E[k]>>;
+} & { [k in keyof StripTSDoc<Functions<R>>]: ServerReceiver<FunctionParameters<R[k]>, FunctionReturn<R[k]>> } & {
+	[k in keyof FunctionNamespaces<E>]: ServerHandler<E[k], k extends keyof R ? R[k] : {}>;
+} & {
+	[k in keyof FunctionNamespaces<R>]: ServerHandler<k extends keyof E ? E[k] : {}, R[k]>;
+};
 
 export type ClientHandler<E, R> = NetworkingObfuscationMarker & {
-	[k in keyof E]: ClientSender<FunctionParameters<E[k]>, FunctionReturn<E[k]>>;
-} & { [k in keyof StripTSDoc<R>]: ClientReceiver<FunctionParameters<R[k]>, FunctionReturn<R[k]>> };
+	[k in keyof Functions<E>]: ClientSender<FunctionParameters<E[k]>, FunctionReturn<E[k]>>;
+} & { [k in keyof StripTSDoc<Functions<R>>]: ClientReceiver<FunctionParameters<R[k]>, FunctionReturn<R[k]>> } & {
+	[k in keyof FunctionNamespaces<E>]: ClientHandler<E[k], k extends keyof R ? R[k] : {}>;
+} & {
+	[k in keyof FunctionNamespaces<R>]: ClientHandler<k extends keyof E ? E[k] : {}, R[k]>;
+};
 
 export interface FunctionCreateConfiguration<T> {
 	/**
@@ -111,14 +120,14 @@ export interface GlobalFunction<S, C> {
 	 *
 	 * @metadata macro {@link config intrinsic-const} {@link config intrinsic-middleware}
 	 */
-	createServer(config: Partial<FunctionCreateConfiguration<S>>, meta?: FunctionMetadata<S, C>): ServerHandler<C, S>;
+	createServer(config: Partial<FunctionCreateConfiguration<S>>, meta?: NamespaceMetadata<S, C>): ServerHandler<C, S>;
 
 	/**
 	 * This is the client implementation of the network and does not exist on the server.
 	 *
 	 * @metadata macro {@link config intrinsic-const} {@link config intrinsic-middleware}
 	 */
-	createClient(config: Partial<FunctionCreateConfiguration<C>>, meta?: FunctionMetadata<C, S>): ClientHandler<S, C>;
+	createClient(config: Partial<FunctionCreateConfiguration<C>>, meta?: NamespaceMetadata<C, S>): ClientHandler<S, C>;
 
 	/**
 	 * Registers a networking event handler.
@@ -168,10 +177,33 @@ export interface RequestInfo {
 	requests: Map<number, (value: unknown, rejection?: NetworkingFunctionError) => void>;
 }
 
+export type FunctionNamespaces<T> = ExcludeMembers<T, Callback>;
+export type Functions<T> = ExtractMembers<T, Callback>;
+
 /**
  * We must generate the return type of events separately as Flamework no longer includes all type guards on both server and client.
  */
-export type FunctionMetadata<T, R> = Modding.Many<{
-	incoming: IntrinsicObfuscate<{ [k in keyof T]: IntrinsicTupleGuards<Parameters<T[k]>> }>;
-	returns: IntrinsicObfuscate<{ [k in keyof R]: Modding.Generic<ReturnType<R[k]>, "guard"> }>;
+export type NamespaceMetadata<R, S> = Modding.Many<{
+	incomingIds: ObfuscateNames<keyof Functions<R>>;
+	incoming: IntrinsicObfuscate<{ [k in keyof R]: IntrinsicTupleGuards<Parameters<R[k]>> }>;
+
+	outgoingIds: ObfuscateNames<keyof Functions<S>>;
+	outgoing: IntrinsicObfuscate<{ [k in keyof S]: Modding.Generic<ReturnType<S[k]>, "guard"> }>;
+
+	namespaceIds: ObfuscateNames<keyof FunctionNamespaces<R> | keyof FunctionNamespaces<S>>;
+	namespaces: IntrinsicObfuscate<
+		{
+			[k in keyof FunctionNamespaces<R>]: NamespaceMetadata<R[k], k extends keyof S ? S[k] : {}>;
+		} & {
+			[k in keyof FunctionNamespaces<S>]: NamespaceMetadata<k extends keyof R ? R[k] : {}, S[k]>;
+		}
+	>;
 }>;
+
+export type FunctionMiddlewareList<T> = {
+	readonly [k in keyof Functions<T>]?: T[k] extends (...args: infer I) => infer O
+		? [...FunctionMiddleware<I, O>[]]
+		: never;
+} & {
+	readonly [k in keyof FunctionNamespaces<T>]?: FunctionMiddlewareList<T[k]>;
+};
