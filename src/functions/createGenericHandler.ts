@@ -2,12 +2,13 @@ import { NetworkingFunctionError } from "../function/errors";
 import { NetworkInfo } from "../types";
 import { SkipBadRequest } from "../middleware/skip";
 import { FunctionNetworkingEvents } from "../handlers";
-import { ClientHandler, FunctionCreateConfiguration, FunctionMetadata, ServerHandler } from "./types";
+import { ClientHandler, FunctionCreateConfiguration, Functions, NamespaceMetadata, ServerHandler } from "./types";
 import { SignalContainer } from "../util/createSignalContainer";
 import { createFunctionReceiver, FunctionReceiverInterface } from "../function/createFunctionReceiver";
 import { createFunctionSender, FunctionSenderInterface } from "../function/createFunctionSender";
 import { createGuardMiddleware } from "../middleware/createGuardMiddleware";
 import { Players } from "@rbxts/services";
+import { getNamespaceConfig } from "../util/getNamespaceConfig";
 
 export type MethodCreator = (
 	config: FunctionCreateConfiguration<unknown>,
@@ -17,28 +18,28 @@ export type MethodCreator = (
 
 export function createGenericHandler<T extends ClientHandler<S, R> | ServerHandler<S, R>, S, R>(
 	globalName: string,
-	receiverNames: string[],
-	senderNames: string[],
+	namespaceName: string | undefined,
 	receiverPrefix: string,
 	senderPrefix: string,
-	metadata: FunctionMetadata<R, S>,
+	metadata: NamespaceMetadata<R, S>,
 	config: FunctionCreateConfiguration<R>,
 	signals: SignalContainer<FunctionNetworkingEvents>,
 	createMethod: MethodCreator,
 ): T {
 	const handler = {} as T;
 
-	const receiverNameSet = new Set(receiverNames);
-	const senderNameSet = new Set(senderNames);
-	for (const name of new Set([...receiverNames, ...senderNames])) {
-		const configMiddleware = config.middleware[name as keyof R];
-		const incomingMiddleware = configMiddleware ? table.clone(configMiddleware) : [];
+	const receiverNameSet = new Set(metadata.incomingIds);
+	const senderNameSet = new Set(metadata.outgoingIds);
+	for (const name of new Set([...metadata.incomingIds, ...metadata.outgoingIds])) {
+		const configMiddleware = config.middleware[name as keyof Functions<R>];
+		const incomingMiddleware = configMiddleware !== undefined ? table.clone(configMiddleware) : [];
 		const isReceiver = receiverNameSet.has(name);
 		const isSender = senderNameSet.has(name);
+		const effectiveName = namespaceName !== undefined ? `${namespaceName}/${name}` : name;
 		const networkInfo: NetworkInfo = {
 			eventType: "Function",
+			name: effectiveName,
 			globalName,
-			name,
 		};
 
 		if (!config.disableIncomingGuards && isReceiver) {
@@ -62,7 +63,7 @@ export function createGenericHandler<T extends ClientHandler<S, R> | ServerHandl
 			? createFunctionReceiver({
 					namespace: globalName,
 					debugName: name,
-					id: isSender ? `${receiverPrefix}${name}` : name,
+					id: isSender ? `${receiverPrefix}${effectiveName}` : effectiveName,
 					networkInfo,
 					incomingMiddleware,
 			  })
@@ -72,12 +73,12 @@ export function createGenericHandler<T extends ClientHandler<S, R> | ServerHandl
 			? createFunctionSender({
 					namespace: globalName,
 					debugName: name,
-					id: isReceiver ? `${senderPrefix}${name}` : name,
+					id: isReceiver ? `${senderPrefix}${effectiveName}` : effectiveName,
 					networkInfo,
 					responseMiddleware: config.disableIncomingGuards
 						? undefined
 						: (player, value, resolve, reject) => {
-								const returnGuard = metadata.returns[name];
+								const returnGuard = metadata.outgoing[name];
 								if (returnGuard && !returnGuard(value)) {
 									reject(NetworkingFunctionError.InvalidResult);
 
@@ -92,7 +93,21 @@ export function createGenericHandler<T extends ClientHandler<S, R> | ServerHandl
 			  })
 			: undefined;
 
-		handler[name as keyof S] = createMethod(config, receiver, sender) as never;
+		handler[name as keyof T] = createMethod(config, receiver, sender) as never;
+	}
+
+	for (const namespaceId of metadata.namespaceIds) {
+		const namespace = metadata.namespaces[namespaceId];
+		handler[namespaceId as keyof T] = createGenericHandler(
+			globalName,
+			namespaceName !== undefined ? `${namespaceName}/${namespaceId}` : namespaceId,
+			receiverPrefix,
+			senderPrefix,
+			namespace as never,
+			getNamespaceConfig(config, namespaceId),
+			signals,
+			createMethod,
+		);
 	}
 
 	return handler;

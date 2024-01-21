@@ -9,7 +9,7 @@ import {
 } from "./middleware/types";
 import { createNetworkingEvent } from "./events/createNetworkingEvent";
 import { createNetworkingFunction } from "./functions/createNetworkingFunction";
-import { IntrinsicDeclaration, NetworkUnreliable, ObfuscateNames } from "./types";
+import { IntrinsicDeclaration, NetworkUnreliable } from "./types";
 
 export namespace Networking {
 	/**
@@ -18,12 +18,8 @@ export namespace Networking {
 	 * @param clientMiddleware Middleware for client events
 	 * @metadata macro
 	 */
-	export function createEvent<S, C>(
-		name?: IntrinsicDeclaration,
-		server?: ObfuscateNames<keyof S>,
-		client?: ObfuscateNames<keyof C>,
-	): GlobalEvent<S, C> {
-		return createNetworkingEvent(name!, server!, client!);
+	export function createEvent<S, C>(name?: IntrinsicDeclaration): GlobalEvent<S, C> {
+		return createNetworkingEvent(name!);
 	}
 
 	/**
@@ -32,12 +28,8 @@ export namespace Networking {
 	 * @param clientMiddleware Middleware for client events
 	 * @metadata macro
 	 */
-	export function createFunction<S, C>(
-		name?: IntrinsicDeclaration,
-		server?: ObfuscateNames<keyof S>,
-		client?: ObfuscateNames<keyof C>,
-	): GlobalFunction<S, C> {
-		return createNetworkingFunction(name!, server!, client!);
+	export function createFunction<S, C>(name?: IntrinsicDeclaration): GlobalFunction<S, C> {
+		return createNetworkingFunction(name!);
 	}
 
 	/**

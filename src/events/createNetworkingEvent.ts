@@ -14,11 +14,7 @@ function getDefaultConfiguration<T>(config: Partial<EventCreateConfiguration<T>>
 	});
 }
 
-export function createNetworkingEvent<S, C>(
-	globalName: string,
-	serverNames: string[],
-	clientNames: string[],
-): GlobalEvent<S, C> {
+export function createNetworkingEvent<S, C>(globalName: string): GlobalEvent<S, C> {
 	const signals = createSignalContainer<EventNetworkingEvents>();
 
 	let server: ServerHandler<C, S> | undefined;
@@ -33,8 +29,7 @@ export function createNetworkingEvent<S, C>(
 			if (server === undefined) {
 				server = createGenericHandler<ServerHandler<C, S>, C, S>(
 					globalName,
-					serverNames,
-					clientNames,
+					undefined,
 					meta!,
 					getDefaultConfiguration(config),
 					signals,
@@ -53,8 +48,7 @@ export function createNetworkingEvent<S, C>(
 			if (client === undefined) {
 				client = createGenericHandler<ClientHandler<S, C>, S, C>(
 					globalName,
-					clientNames,
-					serverNames,
+					undefined,
 					meta!,
 					getDefaultConfiguration(config),
 					signals,

@@ -40,14 +40,15 @@ export type StripTSDoc<T, E extends string | number | symbol = keyof T> = {
 };
 
 export type ObfuscateNames<T> = IntrinsicObfuscateArray<
-	(T extends T ? Modding.Obfuscate<T & string, "remotes"> : never)[]
+	(T extends T ? Modding.Obfuscate<T & string, "remotes"> : never)[],
+	string[]
 >;
 
 /** @hidden Intrinsic feature not intended for users */
 export type IntrinsicObfuscate<T> = Modding.Intrinsic<"obfuscate-obj", [T, "remotes"], Record<string, T[keyof T]>>;
 
 /** @hidden Intrinsic feature not intended for users */
-export type IntrinsicObfuscateArray<T> = Modding.Intrinsic<"shuffle-array", [T], T>;
+export type IntrinsicObfuscateArray<T, V = T> = Modding.Intrinsic<"shuffle-array", [T], V>;
 
 /** @hidden Intrinsic feature not intended for users */
 export type IntrinsicTupleGuards<T> = Modding.Intrinsic<"tuple-guards", [T], GuardType>;
