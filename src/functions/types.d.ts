@@ -5,7 +5,6 @@ import {
 	IntrinsicTupleGuards,
 	IntrinsicObfuscate,
 	NetworkingObfuscationMarker,
-	StripTSDoc,
 	ObfuscateNames,
 } from "../types";
 import { FunctionNetworkingEvents } from "../handlers";
@@ -75,7 +74,7 @@ export interface ClientReceiver<I extends unknown[], O> {
 
 export type ServerHandler<E, R> = NetworkingObfuscationMarker & {
 	[k in keyof Functions<E>]: ServerSender<FunctionParameters<E[k]>, FunctionReturn<E[k]>>;
-} & { [k in keyof StripTSDoc<Functions<R>>]: ServerReceiver<FunctionParameters<R[k]>, FunctionReturn<R[k]>> } & {
+} & { [k in keyof Functions<R>]: ServerReceiver<FunctionParameters<R[k]>, FunctionReturn<R[k]>> } & {
 	[k in keyof FunctionNamespaces<E>]: ServerHandler<E[k], k extends keyof R ? R[k] : {}>;
 } & {
 	[k in keyof FunctionNamespaces<R>]: ServerHandler<k extends keyof E ? E[k] : {}, R[k]>;
@@ -83,7 +82,7 @@ export type ServerHandler<E, R> = NetworkingObfuscationMarker & {
 
 export type ClientHandler<E, R> = NetworkingObfuscationMarker & {
 	[k in keyof Functions<E>]: ClientSender<FunctionParameters<E[k]>, FunctionReturn<E[k]>>;
-} & { [k in keyof StripTSDoc<Functions<R>>]: ClientReceiver<FunctionParameters<R[k]>, FunctionReturn<R[k]>> } & {
+} & { [k in keyof Functions<R>]: ClientReceiver<FunctionParameters<R[k]>, FunctionReturn<R[k]>> } & {
 	[k in keyof FunctionNamespaces<E>]: ClientHandler<E[k], k extends keyof R ? R[k] : {}>;
 } & {
 	[k in keyof FunctionNamespaces<R>]: ClientHandler<k extends keyof E ? E[k] : {}, R[k]>;

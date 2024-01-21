@@ -3,7 +3,6 @@ import {
 	IntrinsicTupleGuards,
 	IntrinsicObfuscate,
 	NetworkingObfuscationMarker,
-	StripTSDoc,
 	NetworkUnreliable,
 	ObfuscateNames,
 } from "../types";
@@ -69,7 +68,7 @@ export interface ClientReceiver<I extends unknown[]> {
 
 export type ServerHandler<E, R> = NetworkingObfuscationMarker & {
 	[k in keyof Events<E>]: ServerSender<FunctionParameters<E[k]>>;
-} & { [k in keyof StripTSDoc<Events<R>>]: ServerReceiver<FunctionParameters<R[k]>> } & {
+} & { [k in keyof Events<R>]: ServerReceiver<FunctionParameters<R[k]>> } & {
 	[k in keyof EventNamespaces<E>]: ServerHandler<E[k], k extends keyof R ? R[k] : {}>;
 } & {
 	[k in keyof EventNamespaces<R>]: ServerHandler<k extends keyof E ? E[k] : {}, R[k]>;
@@ -77,7 +76,7 @@ export type ServerHandler<E, R> = NetworkingObfuscationMarker & {
 
 export type ClientHandler<E, R> = NetworkingObfuscationMarker & {
 	[k in keyof Events<E>]: ClientSender<FunctionParameters<E[k]>>;
-} & { [k in keyof StripTSDoc<Events<R>>]: ClientReceiver<FunctionParameters<R[k]>> } & {
+} & { [k in keyof Events<R>]: ClientReceiver<FunctionParameters<R[k]>> } & {
 	[k in keyof EventNamespaces<E>]: ClientHandler<E[k], k extends keyof R ? R[k] : {}>;
 } & {
 	[k in keyof EventNamespaces<R>]: ClientHandler<k extends keyof E ? E[k] : {}, R[k]>;

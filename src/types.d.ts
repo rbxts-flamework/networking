@@ -32,13 +32,6 @@ export interface NetworkingObfuscationMarker {
 export type FunctionParameters<T> = T extends (...args: infer P) => unknown ? P : never;
 export type FunctionReturn<T> = T extends (...args: never[]) => infer R ? R : never;
 
-/**
- * A very gross hack to get rid of doc comment duplication on events.
- */
-export type StripTSDoc<T, E extends string | number | symbol = keyof T> = {
-	[k in E]: k extends keyof T ? T[k] : never;
-};
-
 export type ObfuscateNames<T> = IntrinsicObfuscateArray<
 	(T extends T ? Modding.Obfuscate<T & string, "remotes"> : never)[],
 	string[]
