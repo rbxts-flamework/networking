@@ -9,7 +9,7 @@ import {
 } from "./middleware/types";
 import { createNetworkingEvent } from "./events/createNetworkingEvent";
 import { createNetworkingFunction } from "./functions/createNetworkingFunction";
-import { IntrinsicDeclaration, NetworkUnreliable, ObfuscateNames } from "./types";
+import { IntrinsicDeclaration, NetworkUnreliable } from "./types";
 
 export namespace Networking {
 	/**
