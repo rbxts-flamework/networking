@@ -11,6 +11,10 @@ function findByAttribute(parent: Instance, id: string) {
 function waitByAttribute(parent: Instance, id: string) {
 	let instance = findByAttribute(parent, id);
 
+	const watcherThread = task.delay(5, () => {
+		warn(`Flamework is waiting on '${id}' for`, parent);
+	});
+
 	if (!instance) {
 		while (true) {
 			instance = parent.ChildAdded.Wait()[0];
@@ -20,6 +24,8 @@ function waitByAttribute(parent: Instance, id: string) {
 			}
 		}
 	}
+
+	task.cancel(watcherThread);
 
 	return instance;
 }
