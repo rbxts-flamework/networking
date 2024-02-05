@@ -17,10 +17,15 @@ export function createGenericHandler<T extends ClientHandler<S, R> | ServerHandl
 	const handler = {} as T;
 
 	const receiverNameSet = new Set(metadata.incomingIds);
+	const senderNameSet = new Set(metadata.outgoingIds);
 	for (const name of new Set([...metadata.incomingIds, ...metadata.outgoingIds])) {
-		const isIncomingUnreliable = metadata.incomingUnreliable[name] === true;
-		const isOutgoingUnreliable = metadata.outgoingUnreliable[name] === true;
-		const isReceiver = receiverNameSet.has(name);
+		const isIncoming = receiverNameSet.has(name);
+		const isOutgoing = senderNameSet.has(name);
+		// If there is no incoming/outgoing event, use the same reliability as the other.
+		const incomingChannel = isIncoming ? metadata.incomingUnreliable : metadata.outgoingUnreliable;
+		const outgoingChannel = isOutgoing ? metadata.outgoingUnreliable : metadata.incomingUnreliable;
+		const isIncomingUnreliable = incomingChannel[name] === true;
+		const isOutgoingUnreliable = outgoingChannel[name] === true;
 		const configMiddleware = config.middleware[name as keyof Events<R>];
 		const incomingMiddleware = configMiddleware !== undefined ? table.clone(configMiddleware) : [];
 		const effectiveName = namespaceName !== undefined ? `${namespaceName}/${name}` : name;
@@ -30,7 +35,7 @@ export function createGenericHandler<T extends ClientHandler<S, R> | ServerHandl
 			globalName,
 		};
 
-		if (!config.disableIncomingGuards && isReceiver) {
+		if (!config.disableIncomingGuards && isIncoming) {
 			const guards = metadata.incoming[name];
 			assert(guards);
 
