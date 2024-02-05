@@ -26,7 +26,6 @@ export function createGenericHandler<T extends ClientHandler<S, R> | ServerHandl
 		const outgoingChannel = isOutgoing ? metadata.outgoingUnreliable : metadata.incomingUnreliable;
 		const isIncomingUnreliable = incomingChannel[name] === true;
 		const isOutgoingUnreliable = outgoingChannel[name] === true;
-		const isReceiver = receiverNameSet.has(name);
 		const configMiddleware = config.middleware[name as keyof Events<R>];
 		const incomingMiddleware = configMiddleware !== undefined ? table.clone(configMiddleware) : [];
 		const effectiveName = namespaceName !== undefined ? `${namespaceName}/${name}` : name;
@@ -36,7 +35,7 @@ export function createGenericHandler<T extends ClientHandler<S, R> | ServerHandl
 			globalName,
 		};
 
-		if (!config.disableIncomingGuards && isReceiver) {
+		if (!config.disableIncomingGuards && isIncoming) {
 			const guards = metadata.incoming[name];
 			assert(guards);
 
