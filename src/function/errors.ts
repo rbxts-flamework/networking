@@ -1,6 +1,7 @@
 import { Flamework } from "@flamework/core";
 
-export const isNetworkingFunctionError = Flamework.createGuard<NetworkingFunctionError>();
+const isNetworkingFunctionError = Flamework.createGuard<NetworkingFunctionError>();
+
 export enum NetworkingFunctionError {
 	Timeout = "Timeout",
 	Cancelled = "Cancelled",
