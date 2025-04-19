@@ -16,13 +16,15 @@ function waitByAttribute(parent: Instance, id: string) {
 	});
 
 	if (!instance) {
-		while (true) {
-			instance = parent.ChildAdded.Wait()[0];
-
+		const thread = coroutine.running();
+		const connection = parent.ChildAdded.Connect((instance) => {
 			if (instance.GetAttribute("id") === id) {
-				break;
+				connection.Disconnect();
+				task.spawn(thread, instance);
 			}
-		}
+		});
+
+		instance = coroutine.yield()[0] as Instance;
 	}
 
 	task.cancel(watcherThread);
